@@ -63,60 +63,112 @@ async function reset() {
   } catch (e) { error.value = e.message }
 }
 onMounted(load)
+const slotLabel = computed(() => SLOTS.find((s) => s.id === slot.value)?.label)
 </script>
 
 <template>
-  <h2>Banners</h2>
-  <div class="row" style="margin-bottom: 16px">
-    <button v-for="s in SLOTS" :key="s.id" class="btn" :class="{ primary: slot === s.id }" @click="pick(s.id)">
-      {{ s.label }}<span v-if="saved[s.id]"> ●</span>
-    </button>
+  <div class="page-head">
+    <h1>Banners</h1>
   </div>
 
-  <div class="card">
-    <p class="muted" style="margin-top: 0">
-      {{ isCustom ? 'This slot uses your custom slides.' : 'This slot uses the built-in images. Add slides to replace them.' }}
-      Mobile image ≈ 3:2 (e.g. 1200×800). Desktop image ≈ 3:1 (e.g. 1920×640), optional.
-    </p>
+  <div class="banners">
+    <nav class="card slots">
+      <button v-for="s in SLOTS" :key="s.id" class="slot" :class="{ on: slot === s.id }" @click="pick(s.id)">
+        <span>{{ s.label }}</span>
+        <span v-if="saved[s.id]" class="tag">Custom</span>
+      </button>
+    </nav>
 
-    <div v-for="(s, i) in slides" :key="i" class="card" style="background: var(--bg)">
-      <div class="row" style="align-items: flex-start; gap: 16px">
+    <div class="card editor">
+      <div class="card-head">
         <div>
-          <div class="muted">Mobile</div>
-          <img v-if="s.image" :src="previewUrl(s.image)" class="thumb" alt="" />
-          <div v-else class="thumb"></div>
+          <h3>{{ slotLabel }}</h3>
+          <div class="muted small" style="margin-top: 2px">{{ isCustom ? 'Using your slides' : 'Using the built-in images' }}</div>
         </div>
-        <div>
-          <div class="muted">Desktop</div>
-          <img v-if="s.desktopImage" :src="previewUrl(s.desktopImage)" class="thumb wide" alt="" />
-          <div v-else class="thumb wide"></div>
-        </div>
-        <div style="flex: 1; min-width: 240px; display: grid; gap: 8px">
-          <label>Mobile image URL (required)
-            <input v-model="s.image" placeholder="https://…" />
-          </label>
-          <label>Desktop image URL (optional)
-            <input v-model="s.desktopImage" placeholder="https://…" />
-          </label>
-          <div class="row">
-            <label style="flex: 1">Alt text<input v-model="s.alt" placeholder="Describe the banner" /></label>
-            <label style="flex: 1">Link when clicked (optional)<input v-model="s.link" placeholder="/sales or https://…" /></label>
+        <button v-if="isCustom" class="btn sm danger" @click="reset">Reset to built-in</button>
+      </div>
+
+      <div class="card-body stack">
+        <div class="notice">Mobile image about 3:2 (e.g. 1200×800). Desktop image about 3:1 (e.g. 1920×640), optional.</div>
+
+        <div v-for="(s, i) in slides" :key="i" class="slide">
+          <div class="slide-index num">{{ i + 1 }}</div>
+          <div class="previews">
+            <div>
+              <div class="muted small">Mobile</div>
+              <img v-if="s.image" :src="previewUrl(s.image)" class="thumb" alt="" />
+              <div v-else class="thumb"></div>
+            </div>
+            <div>
+              <div class="muted small">Desktop</div>
+              <img v-if="s.desktopImage" :src="previewUrl(s.desktopImage)" class="thumb wide" alt="" />
+              <div v-else class="thumb wide"></div>
+            </div>
+          </div>
+          <div class="slide-fields">
+            <label class="field">Mobile image URL<input v-model="s.image" placeholder="https://…" /></label>
+            <label class="field"><span>Desktop image URL <span class="hint">(optional)</span></span><input v-model="s.desktopImage" placeholder="https://…" /></label>
+            <div class="two">
+              <label class="field">Alt text<input v-model="s.alt" placeholder="Describe the banner" /></label>
+              <label class="field"><span>Link <span class="hint">(optional)</span></span><input v-model="s.link" placeholder="/sales or https://…" /></label>
+            </div>
+          </div>
+          <div class="slide-actions">
+            <button class="btn icon" title="Move up" :disabled="i === 0" @click="move(i, -1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            </button>
+            <button class="btn icon" title="Move down" :disabled="i === slides.length - 1" @click="move(i, 1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            <button class="btn icon danger" title="Remove" @click="slides.splice(i, 1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+            </button>
           </div>
         </div>
-        <div style="display: grid; gap: 6px">
-          <button class="btn" :disabled="i === 0" @click="move(i, -1)">↑</button>
-          <button class="btn" :disabled="i === slides.length - 1" @click="move(i, 1)">↓</button>
-          <button class="btn danger" @click="slides.splice(i, 1)">Remove</button>
-        </div>
+
+        <div v-if="!slides.length" class="empty" style="padding: 24px">No custom slides</div>
+
+        <p v-if="msg" class="success" style="margin: 0">{{ msg }}</p>
+        <p v-if="error" class="error" style="margin: 0">{{ error }}</p>
+      </div>
+
+      <div class="card-foot">
+        <button class="btn" @click="add">Add slide</button>
+        <button class="btn primary" @click="save">Save banners</button>
       </div>
     </div>
-
-    <div class="row">
-      <button class="btn" @click="add">+ Add slide</button>
-      <button class="btn primary" @click="save">Save banners</button>
-      <button v-if="isCustom" class="btn danger" @click="reset">Reset to built-in</button>
-    </div>
-    <p v-if="msg" style="color: var(--ok)">{{ msg }}</p>
-    <p v-if="error" class="error">{{ error }}</p>
   </div>
 </template>
+
+<style scoped>
+.banners { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
+.editor { min-width: 0; margin: 0; }
+.slots { padding: 6px; display: grid; gap: 2px; margin: 0; }
+.slot {
+  font: inherit; font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border: 0; background: none; text-align: left; padding: 8px 10px; border-radius: 7px; color: var(--text-2); cursor: pointer;
+}
+.slot:hover, .slot.on { background: var(--hover); color: var(--text); }
+.tag { font-size: 11px; color: var(--ok); background: #ebf6f0; padding: 1px 7px; border-radius: 99px; flex-shrink: 0; }
+.slide { display: grid; grid-template-columns: 24px auto minmax(220px, 1fr) auto; gap: 16px; align-items: start; border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.slide-index { width: 24px; height: 24px; border-radius: 6px; background: var(--hover); display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--text-2); }
+.previews { display: flex; gap: 12px; }
+.previews .small { margin-bottom: 4px; }
+.slide-fields { display: grid; gap: 10px; min-width: 0; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.slide-actions { display: grid; gap: 6px; }
+@media (max-width: 1180px) {
+  .slide { grid-template-columns: 24px minmax(0, 1fr) auto; }
+  .previews, .slide-fields { grid-column: 2; }
+  .slide-actions { grid-row: 1; grid-column: 3; }
+}
+@media (max-width: 860px) {
+  .banners { grid-template-columns: 1fr; }
+  .slots { display: flex; overflow-x: auto; }
+  .slot { white-space: nowrap; }
+  .two { grid-template-columns: 1fr; }
+  .previews { flex-wrap: wrap; }
+  .thumb { width: 120px; }
+  .thumb.wide { width: 180px; }
+}
+</style>

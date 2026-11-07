@@ -41,4 +41,5 @@ export function previewUrl(url) {
   return url
 }
 
-export const omr = (n) => `${Number(n || 0).toFixed(3)} OMR`
+const omrFormat = new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+export const omr = (n) => `${omrFormat.format(Number(n || 0))} OMR`

@@ -50,47 +50,71 @@ onMounted(load)
 </script>
 
 <template>
-  <h2>Promo codes</h2>
+  <div class="page-head">
+    <h1>Promo codes</h1>
+  </div>
+
   <form class="card" @submit.prevent="save">
-    <h3>{{ form.id ? 'Edit promotion' : 'New promotion' }}</h3>
-    <div class="row" style="align-items: flex-end">
-      <label>Title<input v-model="form.title" required placeholder="Flash Sale" /></label>
-      <label>Code<input v-model="form.code" placeholder="TECH20" style="text-transform: uppercase; width: 130px" /></label>
-      <label>Discount %<input v-model="form.discount_percentage" type="number" min="1" max="100" style="width: 100px" /></label>
-      <label style="flex: 1; min-width: 220px">Description (shown in the top bar)<input v-model="form.description" placeholder="Get 20% OFF all power banks." /></label>
+    <div class="card-head">
+      <h3>{{ form.id ? 'Edit promotion' : 'New promotion' }}</h3>
     </div>
-    <div class="row" style="align-items: flex-end; margin-top: 8px">
-      <label style="flex: 1; min-width: 260px">Only these categories (comma separated, empty = every product)<input v-model="form.categoriesText" placeholder="Chargers &amp; Power Banks, Audio" /></label>
-      <label style="flex-direction: row; align-items: center; gap: 6px; color: var(--text)"><input v-model="form.active" type="checkbox" /> Active</label>
-      <button class="btn primary">{{ form.id ? 'Save' : 'Create' }}</button>
-      <button v-if="form.id" type="button" class="btn" @click="form = blank()">Cancel</button>
+    <div class="card-body stack">
+      <div class="form-grid">
+        <label class="field">Title<input v-model="form.title" required placeholder="Flash Sale" /></label>
+        <label class="field">Code<input v-model="form.code" placeholder="TECH20" style="text-transform: uppercase" /></label>
+        <label class="field">Discount %<input v-model="form.discount_percentage" type="number" min="1" max="100" /></label>
+      </div>
+      <label class="field">Description
+        <input v-model="form.description" placeholder="Get 20% off all power banks" />
+        <span class="hint">Shown in the store's top bar</span>
+      </label>
+      <label class="field">Categories
+        <input v-model="form.categoriesText" placeholder="Chargers &amp; Power Banks, Audio" />
+        <span class="hint">Comma separated. Leave empty to apply to every product.</span>
+      </label>
+      <div class="notice">A promotion needs both a code and a discount to work at checkout. Without a code it only shows as an announcement.</div>
+      <p v-if="error" class="error" style="margin: 0">{{ error }}</p>
     </div>
-    <p class="muted" style="margin: 8px 0 0">
-      A promotion needs both a code and a discount % to work at checkout. Without a code it is only shown as an announcement.
-    </p>
-    <p v-if="error" class="error">{{ error }}</p>
+    <div class="card-foot">
+      <label class="check"><input v-model="form.active" type="checkbox" /> Active</label>
+      <div class="row">
+        <button v-if="form.id" type="button" class="btn" @click="form = blank()">Cancel</button>
+        <button class="btn primary">{{ form.id ? 'Save changes' : 'Create promotion' }}</button>
+      </div>
+    </div>
   </form>
 
-  <div class="card scroll">
-    <table>
-      <thead><tr><th>Title</th><th>Code</th><th>Discount</th><th>Categories</th><th>Status</th><th></th></tr></thead>
-      <tbody>
-        <tr v-for="p in promos" :key="p.id">
-          <td><b>{{ p.title }}</b><div class="muted">{{ p.description }}</div></td>
-          <td><code>{{ p.code || '—' }}</code></td>
-          <td>{{ p.discount_percentage ? p.discount_percentage + '%' : '—' }}</td>
-          <td>{{ p.categories?.join(', ') || 'All products' }}</td>
-          <td><span class="pill" :class="p.active ? 's-done' : 's-cancelled'">{{ p.active ? 'Active' : 'Off' }}</span></td>
-          <td>
-            <div class="row">
-              <button class="btn" @click="edit(p)">Edit</button>
-              <button class="btn" @click="toggle(p)">{{ p.active ? 'Disable' : 'Enable' }}</button>
-              <button class="btn danger" @click="remove(p)">Delete</button>
-            </div>
-          </td>
-        </tr>
-        <tr v-if="!promos.length"><td colspan="6" class="muted">No promotions yet.</td></tr>
-      </tbody>
-    </table>
+  <div class="card">
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Promotion</th><th>Code</th><th>Discount</th><th>Applies to</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <tr v-for="p in promos" :key="p.id">
+            <td><b>{{ p.title }}</b><div v-if="p.description" class="muted small">{{ p.description }}</div></td>
+            <td><code v-if="p.code" class="code">{{ p.code }}</code><span v-else class="muted">—</span></td>
+            <td class="num">{{ p.discount_percentage ? p.discount_percentage + '%' : '—' }}</td>
+            <td class="sub">{{ p.categories?.join(', ') || 'All products' }}</td>
+            <td><span class="pill" :class="p.active ? 's-done' : 's-off'">{{ p.active ? 'Active' : 'Off' }}</span></td>
+            <td class="r">
+              <div class="row" style="justify-content: flex-end; flex-wrap: nowrap">
+                <button class="btn sm" @click="edit(p)">Edit</button>
+                <button class="btn sm" @click="toggle(p)">{{ p.active ? 'Disable' : 'Enable' }}</button>
+                <button class="btn sm danger" @click="remove(p)">Delete</button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="!promos.length"><td colspan="6" class="empty">No promotions yet</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.form-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; }
+.code { background: var(--hover); border: 1px solid var(--line); padding: 2px 6px; border-radius: 5px; }
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid .field:first-child { grid-column: 1 / -1; }
+}
+</style>
