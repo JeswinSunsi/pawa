@@ -43,7 +43,10 @@ function refreshAll() {
   version.value++
 }
 
+const paymentPending = (order) => order.payment_method === 'online' && order.payment_status === 'pending'
+
 async function setStatus(order, next) {
+  if (paymentPending(order) && (next === 'processing' || next === 'done')) return
   if (next === 'cancelled' && !confirm(`Cancel order ${order.order_number}?`)) return
   try {
     const updated = await api(`/admin/orders/${order.order_number}`, { method: 'PATCH', body: { status: next } })
@@ -87,8 +90,8 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
   <div class="card orders-card">
     <div class="card-head orders-toolbar">
       <div class="tabs">
-        <button :class="{ on: status === '' }" @click="status = ''">All <span class="num">{{ stats?.orders_total ?? '' }}</span></button>
-        <button v-for="s in STATUSES" :key="s" :class="{ on: status === s }" @click="status = s">
+        <button :class="{ on: status === '' }" :aria-pressed="status === ''" @click="status = ''">All <span class="num">{{ stats?.orders_total ?? '' }}</span></button>
+        <button v-for="s in STATUSES" :key="s" :class="{ on: status === s }" :aria-pressed="status === s" @click="status = s">
           <span class="cap">{{ s }}</span> <span class="num">{{ stats?.by_status?.[s] ?? '' }}</span>
         </button>
       </div>
@@ -117,8 +120,8 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
             <td class="r num order-total" data-label="Total"><b>{{ omr(o.total) }}</b></td>
             <td class="r order-actions" @click.stop>
               <div class="row actions">
-                <button v-if="o.status === 'new'" class="btn sm" @click="setStatus(o, 'processing')">Start</button>
-                <button v-if="o.status === 'new' || o.status === 'processing'" class="btn sm primary" @click="setStatus(o, 'done')">Complete</button>
+                <button v-if="o.status === 'new'" class="btn sm" :disabled="paymentPending(o)" @click="setStatus(o, 'processing')">Start</button>
+                <button v-if="o.status === 'new' || o.status === 'processing'" class="btn sm primary" :disabled="paymentPending(o)" @click="setStatus(o, 'done')">Complete</button>
                 <button v-if="o.status === 'done' || o.status === 'cancelled'" class="btn sm" @click="setStatus(o, 'new')">Reopen</button>
               </div>
             </td>
@@ -199,8 +202,8 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
       </div>
 
       <div class="drawer-foot">
-        <button v-if="open.status === 'new'" class="btn" @click="setStatus(open, 'processing')">Mark processing</button>
-        <button v-if="open.status === 'new' || open.status === 'processing'" class="btn primary" @click="setStatus(open, 'done')">Mark done</button>
+        <button v-if="open.status === 'new'" class="btn" :disabled="paymentPending(open)" @click="setStatus(open, 'processing')">Mark processing</button>
+        <button v-if="open.status === 'new' || open.status === 'processing'" class="btn primary" :disabled="paymentPending(open)" @click="setStatus(open, 'done')">Mark done</button>
         <button v-if="open.status === 'done' || open.status === 'cancelled'" class="btn" @click="setStatus(open, 'new')">Reopen</button>
         <span class="spacer" />
         <button v-if="open.status !== 'cancelled'" class="btn danger" @click="setStatus(open, 'cancelled')">Cancel order</button>
@@ -210,20 +213,23 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 </template>
 
 <style scoped>
-.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .tabs button {
-  font: inherit; font-size: 13px; font-weight: 500; border: 0; background: none; color: var(--text-2);
-  padding: 8px 10px; border-radius: 7px; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: var(--panel); color: var(--text-2);
+  padding: 8px 12px; border-radius: 999px; cursor: pointer;
 }
 .tabs button .num { color: var(--muted); margin-left: 4px; font-size: 11px; }
-.tabs button:hover { background: var(--hover); }
-.tabs button.on { background: #eaf0e2; color: var(--ink); }
-.tabs button.on .num { color: var(--text-2); }
+.tabs button:hover { border-color: var(--ink); }
+.tabs button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.tabs button.on .num { color: #d1d5db; }
 .cap { text-transform: capitalize; }
 .search { width: 280px; max-width: 100%; }
 .orders td { white-space: nowrap; }
 .actions { justify-content: flex-end; flex-wrap: nowrap; }
-.order-link { font: inherit; font-weight: 600; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; }
+.actions .btn:disabled, .drawer-foot .btn:disabled {
+  background: var(--line-soft); border-color: var(--line); color: var(--muted); opacity: 1; cursor: not-allowed;
+}
+.order-link { font: inherit; font-weight: 500; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; }
 .order-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .orders-card { overflow: hidden; }
 .orders-toolbar { gap: 16px; }

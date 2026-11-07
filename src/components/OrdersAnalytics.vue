@@ -256,11 +256,11 @@ const pct = (v) => `${Math.round(v)}%`
 .analytics { transition: opacity .15s; }
 .analytics.busy { opacity: .6; }
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
-.kpi { padding: 22px; margin: 0; }
-.kpi-label { color: var(--text-2); font-size: 12px; font-weight: 500; }
-.kpi-value { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; font-size: clamp(24px, 2vw, 32px); font-weight: 600; letter-spacing: -.8px; margin: 14px 0 12px; overflow-wrap: anywhere; }
+.kpi { padding: 22px; margin: 0; background: #f9fafb; }
+.kpi-label { color: var(--muted); font-size: 13px; font-weight: 400; }
+.kpi-value { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; font-size: clamp(24px, 2.4vw, 32px); font-weight: 700; letter-spacing: -.8px; margin: 12px 0 10px; overflow-wrap: anywhere; }
 .kpi-unit { font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
-.kpi-delta { font-size: 11px; font-weight: 600; line-height: 1.7; }
+.kpi-delta { font-size: 12px; font-weight: 500; line-height: 1.7; }
 .kpi-delta.up { color: var(--ok); }
 .kpi-delta.down { color: var(--danger); }
 .kpi-delta .muted { font-weight: 400; }
@@ -278,10 +278,10 @@ const pct = (v) => `${Math.round(v)}%`
 .mix-title { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 10px; }
 .stacked { display: flex; gap: 2px; height: 10px; border-radius: 99px; overflow: hidden; background: var(--line-soft); }
 .stacked span { display: block; height: 100%; }
-.seg-new { background: #7398ac; }
-.seg-processing { background: #c4a15b; }
-.seg-done { background: #678b54; }
-.seg-cancelled { background: #c27a6a; }
+.seg-new { background: var(--accent); }
+.seg-processing { background: #d97706; }
+.seg-done { background: #059669; }
+.seg-cancelled { background: #ef4444; }
 .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 10px; font-size: 13px; }
 .legend div { display: flex; align-items: center; gap: 8px; }
 .legend i { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
@@ -290,10 +290,12 @@ const pct = (v) => `${Math.round(v)}%`
 .split-row { display: grid; grid-template-columns: 70px 1fr 40px; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 8px; }
 .split-val { text-align: right; color: var(--text-2); }
 
-@media (max-width: 1100px) {
-  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 1000px) {
   .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cols .card:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 900px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
   .cols { grid-template-columns: minmax(0, 1fr); }

@@ -148,8 +148,9 @@ const slotLabel = computed(() => SLOTS.find((s) => s.id === slot.value)?.label)
   font: inherit; font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 8px;
   border: 0; background: none; text-align: left; padding: 8px 10px; border-radius: 7px; color: var(--text-2); cursor: pointer;
 }
-.slot:hover, .slot.on { background: var(--hover); color: var(--text); }
-.tag { font-size: 11px; color: var(--ok); background: #ebf6f0; padding: 1px 7px; border-radius: 99px; flex-shrink: 0; }
+.slot:hover { background: var(--hover); color: var(--text); }
+.slot.on { background: var(--ink); color: #fff; }
+.tag { font-size: 11px; color: var(--accent); background: #eff6ff; padding: 1px 7px; border-radius: 99px; flex-shrink: 0; }
 .slide { display: grid; grid-template-columns: 24px auto minmax(220px, 1fr) auto; gap: 16px; align-items: start; border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
 .slide-index { width: 24px; height: 24px; border-radius: 6px; background: var(--hover); display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--text-2); }
 .previews { display: flex; gap: 12px; }

@@ -5,6 +5,7 @@ import OrdersView from './views/OrdersView.vue'
 import PromosView from './views/PromosView.vue'
 import BannersView from './views/BannersView.vue'
 import SettingsView from './views/SettingsView.vue'
+import logo from './assets/msouq-logo.png'
 
 // Icon paths are 24x24 stroke icons.
 const tabs = {
@@ -31,7 +32,7 @@ async function login() {
 <template>
   <div v-if="!token" class="login">
     <form class="card login-card" @submit.prevent="login">
-      <div class="brand"><div class="brand-mark">M</div><span>MSouq Admin</span></div>
+      <div class="brand"><img :src="logo" alt="MSouq" width="123" height="36" /><span>Admin</span></div>
       <label class="field">Admin token
         <input v-model="input" type="password" autocomplete="current-password" autofocus required />
       </label>
@@ -43,27 +44,29 @@ async function login() {
   </div>
 
   <div v-else class="layout">
-    <aside class="side">
-      <div class="brand"><div class="brand-mark">M</div><span>MSouq Admin</span></div>
-      <nav class="nav">
-        <button v-for="(t, key) in tabs" :key="key" class="nav-item" :class="{ on: tab === key }" :aria-current="tab === key ? 'page' : undefined" @click="tab = key">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="t.icon" /></svg>
-          <span>{{ t.label }}</span>
-        </button>
-      </nav>
-      <div class="side-foot">
-        <button class="nav-item" @click="setToken('')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
-          Sign out
-        </button>
+    <header class="topbar">
+      <div class="header-inner">
+        <div class="brand"><img :src="logo" alt="MSouq" width="123" height="36" /><span>Admin</span></div>
+        <nav class="nav" aria-label="Admin">
+          <button v-for="(t, key) in tabs" :key="key" class="nav-item" :class="{ on: tab === key }" :aria-current="tab === key ? 'page' : undefined" @click="tab = key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="t.icon" /></svg>
+            <span>{{ t.label }}</span>
+          </button>
+        </nav>
+        <div class="account">
+          <button class="nav-item" @click="setToken('')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+            Sign out
+          </button>
+        </div>
       </div>
-    </aside>
+    </header>
     <main><div class="page"><component :is="tabs[tab].view" /></div></main>
   </div>
 </template>
 
 <style scoped>
-.login { display: grid; place-items: center; min-height: 100vh; padding: 16px; }
+.login { display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; padding: 16px; }
 .login-card { width: 100%; max-width: 360px; padding: 28px; margin: 0; }
 .login-card .brand { padding: 0 0 24px; }
 </style>
