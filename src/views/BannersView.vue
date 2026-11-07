@@ -177,4 +177,7 @@ const slotLabel = computed(() => SLOTS.find((s) => s.id === slot.value)?.label)
   .previews { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
   .two { grid-template-columns: 1fr; }
 }
+@media (max-width: 360px) {
+  .slide-actions { grid-column: 1 / -1; grid-row: auto; }
+}
 </style>

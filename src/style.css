@@ -41,6 +41,7 @@ code { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-si
 .side {
   width: 232px; flex-shrink: 0; background: var(--panel); border-right: 1px solid var(--line);
   padding: 18px 12px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
+  height: 100dvh; overflow-y: auto;
 }
 .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 22px; font-weight: 600; font-size: 15px; }
 .brand-mark {
@@ -176,17 +177,16 @@ tr.sel td { background: #f5f8fd; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
-  .layout { flex-direction: column; }
-  .side { width: auto; height: auto; position: static; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 8px 12px; border-right: 0; border-bottom: 1px solid var(--line); gap: 8px; }
-  .side .brand { padding: 0 8px; }
-  .brand-mark { flex-shrink: 0; }
-  .nav { grid-area: 2 / 1 / 3 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .side { width: 160px; padding-inline: 8px; }
   .nav-item { min-height: 44px; }
-  .side-foot { grid-area: 1 / 2; margin: 0; border: 0; padding: 0; }
   main { padding: 20px 16px 40px; }
 }
 
 @media (max-width: 640px) {
+  .side { width: 80px; padding: 12px 4px; }
+  .side .brand, .nav-item { flex-direction: column; justify-content: center; text-align: center; font-size: 11px; }
+  .side .brand { gap: 6px; padding: 4px 2px 16px; }
+  .nav-item { gap: 4px; padding: 6px 2px; }
   main { padding: 16px 12px 32px; }
   .page-head { margin-bottom: 16px; }
   .card-head, .card-body, .card-foot { padding: 12px; }
@@ -199,8 +199,4 @@ tr.sel td { background: #f5f8fd; }
   .drawer-head h3, .kv dd, .lines td:first-child { overflow-wrap: anywhere; }
   .kv { grid-template-columns: 82px minmax(0, 1fr); }
   .lines td.r { padding-left: 8px; white-space: nowrap; }
-}
-
-@media (max-width: 480px) {
-  .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

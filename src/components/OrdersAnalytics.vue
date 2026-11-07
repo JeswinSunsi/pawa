@@ -266,9 +266,10 @@ const pct = (v) => `${Math.round(v)}%`
 
 .cols { display: grid; grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 1fr)); gap: 16px; }
 .cols .card { margin-bottom: 16px; }
-.rank { display: grid; gap: 14px; }
+.rank { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .rank-top { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-size: 13.5px; }
 .rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-top .num { flex-shrink: 0; }
 .rank-bar { height: 6px; background: var(--line-soft); border-radius: 99px; overflow: hidden; }
 .rank-bar span { display: block; height: 100%; background: var(--chart); border-radius: 99px; min-width: 2px; }
 .rank-row .small { margin-top: 4px; }
@@ -293,12 +294,17 @@ const pct = (v) => `${Math.round(v)}%`
   .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cols .card:first-child { grid-column: 1 / -1; }
 }
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .cols { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
   .kpi { padding: 12px; }
   .kpi-value { font-size: 20px; overflow-wrap: anywhere; }
   .rank-name { overflow-wrap: anywhere; white-space: normal; }
   .legend { gap: 6px 12px; }
   .legend div { gap: 4px; }
+}
+@media (max-width: 380px) {
+  .legend { grid-template-columns: 1fr; }
 }
 </style>
