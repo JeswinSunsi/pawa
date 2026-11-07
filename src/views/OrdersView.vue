@@ -56,6 +56,26 @@ async function setStatus(order, next) {
   } catch (e) { alert(e.message) }
 }
 
+// The "order placed" email to the customer (backend: POST /admin/orders/{n}/email, sent via Resend).
+const sendingEmail = ref('')
+const emailsSent = (order) => (order.emails || []).filter((e) => e.type === 'order_placed')
+const emailBlocked = (order) => {
+  if (!order.email) return 'No email address on this order'
+  if (order.status === 'cancelled') return 'Order is cancelled'
+  if (order.payment_method === 'online' && order.payment_status !== 'paid') return 'Online payment not completed'
+  return ''
+}
+
+async function sendOrderEmail(order) {
+  const sent = emailsSent(order)
+  if (sent.length && !confirm(`The order email was already sent on ${fmt(sent[sent.length - 1].at)}. Send it again to ${order.email}?`)) return
+  sendingEmail.value = order.order_number
+  try {
+    const updated = await api(`/admin/orders/${order.order_number}/email`, { method: 'POST' })
+    Object.assign(order, updated)
+  } catch (e) { alert(e.message) } finally { sendingEmail.value = '' }
+}
+
 let timer
 watch(q, () => { clearTimeout(timer); timer = setTimeout(() => { page.value = 1; load() }, 300) })
 watch(status, () => { page.value = 1; load() })
@@ -190,6 +210,23 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
           </table>
         </section>
 
+        <section>
+          <div class="section-title">Customer email</div>
+          <div class="email-row">
+            <div class="small">
+              <template v-if="emailsSent(open).length">
+                <span class="pill s-done">Sent</span>
+                <span class="muted num"> {{ fmt(emailsSent(open).at(-1).at) }}<template v-if="emailsSent(open).length > 1"> · {{ emailsSent(open).length }} times</template></span>
+              </template>
+              <span v-else-if="emailBlocked(open)" class="muted">{{ emailBlocked(open) }}</span>
+              <span v-else class="muted">Order placed email not sent yet</span>
+            </div>
+            <button class="btn sm" :disabled="!!emailBlocked(open) || sendingEmail === open.order_number" @click="sendOrderEmail(open)">
+              {{ sendingEmail === open.order_number ? 'Sending…' : emailsSent(open).length ? 'Resend' : 'Send order email' }}
+            </button>
+          </div>
+        </section>
+
         <section v-if="open.status_history?.length">
           <div class="section-title">History</div>
           <div class="timeline">
@@ -233,6 +270,8 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 .order-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .orders-card { overflow: hidden; }
 .orders-toolbar { gap: 16px; }
+.email-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.email-row .btn:disabled { background: var(--line-soft); border-color: var(--line); color: var(--muted); opacity: 1; cursor: not-allowed; }
 
 @media (max-width: 700px) {
   .period-controls { gap: 6px; }
