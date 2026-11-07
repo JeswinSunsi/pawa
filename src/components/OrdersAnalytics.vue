@@ -264,7 +264,7 @@ const pct = (v) => `${Math.round(v)}%`
 .kpi-delta.down { color: var(--danger); }
 .kpi-delta .muted { font-weight: 400; }
 
-.cols { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 16px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 1fr)); gap: 16px; }
 .cols .card { margin-bottom: 16px; }
 .rank { display: grid; gap: 14px; }
 .rank-top { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-size: 13.5px; }
@@ -290,11 +290,15 @@ const pct = (v) => `${Math.round(v)}%`
 
 @media (max-width: 1100px) {
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cols { grid-template-columns: 1fr 1fr; }
+  .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cols .card:first-child { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
-  .cols { grid-template-columns: 1fr; }
-  .kpi-value { font-size: 20px; }
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .kpi { padding: 12px; }
+  .kpi-value { font-size: 20px; overflow-wrap: anywhere; }
+  .rank-name { overflow-wrap: anywhere; white-space: normal; }
+  .legend { gap: 6px 12px; }
+  .legend div { gap: 4px; }
 }
 </style>

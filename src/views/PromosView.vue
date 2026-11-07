@@ -111,10 +111,10 @@ onMounted(load)
 </template>
 
 <style scoped>
-.form-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; }
+.form-grid { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 14px; }
 .code { background: var(--hover); border: 1px solid var(--line); padding: 2px 6px; border-radius: 5px; }
 @media (max-width: 640px) {
-  .form-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .form-grid .field:first-child { grid-column: 1 / -1; }
 }
 </style>

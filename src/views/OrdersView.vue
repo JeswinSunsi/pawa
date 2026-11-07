@@ -92,7 +92,7 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
           <span class="cap">{{ s }}</span> <span class="num">{{ stats?.by_status?.[s] ?? '' }}</span>
         </button>
       </div>
-      <label class="search" style="width: 280px; max-width: 100%">
+      <label class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
         <input v-model="q" placeholder="Order #, name, email or phone" />
       </label>
@@ -220,6 +220,12 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 .tabs button.on { background: var(--hover); color: var(--text); }
 .tabs button.on .num { color: var(--text-2); }
 .cap { text-transform: capitalize; }
+.search { width: 280px; max-width: 100%; }
 .orders td { white-space: nowrap; }
 .actions { justify-content: flex-end; flex-wrap: nowrap; }
+
+@media (max-width: 640px) {
+  .tabs button { min-height: 44px; }
+  .search { width: 100%; }
+}
 </style>

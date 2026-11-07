@@ -155,20 +155,26 @@ const slotLabel = computed(() => SLOTS.find((s) => s.id === slot.value)?.label)
 .previews { display: flex; gap: 12px; }
 .previews .small { margin-bottom: 4px; }
 .slide-fields { display: grid; gap: 10px; min-width: 0; }
-.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .slide-actions { display: grid; gap: 6px; }
-@media (max-width: 1180px) {
+@media (max-width: 1320px) {
   .slide { grid-template-columns: 24px minmax(0, 1fr) auto; }
   .previews, .slide-fields { grid-column: 2; }
   .slide-actions { grid-row: 1; grid-column: 3; }
+  .previews { flex-wrap: wrap; }
+  .previews > div, .thumb, .thumb.wide { max-width: 100%; }
 }
 @media (max-width: 860px) {
-  .banners { grid-template-columns: 1fr; }
-  .slots { display: flex; overflow-x: auto; }
-  .slot { white-space: nowrap; }
+  .banners { grid-template-columns: minmax(0, 1fr); }
+  .slots { grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr)); }
+  .slot { min-height: 44px; flex-wrap: wrap; justify-content: flex-start; gap: 2px 8px; }
+  .slot:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .slide { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 12px; align-items: center; }
+  .slide-actions { grid-column: 2; display: flex; }
+  .previews, .slide-fields { grid-column: 1 / -1; }
+  .previews { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
   .two { grid-template-columns: 1fr; }
-  .previews { flex-wrap: wrap; }
-  .thumb { width: 120px; }
-  .thumb.wide { width: 180px; }
 }
 </style>

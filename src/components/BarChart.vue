@@ -13,13 +13,13 @@ const wrap = ref(null)
 const width = ref(600)
 let ro
 onMounted(() => {
-  ro = new ResizeObserver(([e]) => (width.value = Math.max(280, e.contentRect.width)))
+  ro = new ResizeObserver(([e]) => (width.value = e.contentRect.width))
   ro.observe(wrap.value)
 })
 onBeforeUnmount(() => ro?.disconnect())
 
 const pad = { top: 12, right: 4, bottom: 26, left: 56 }
-const innerW = computed(() => width.value - pad.left - pad.right)
+const innerW = computed(() => Math.max(0, width.value - pad.left - pad.right))
 const innerH = computed(() => props.height - pad.top - pad.bottom)
 
 function niceStep(max, count) {
@@ -40,7 +40,7 @@ const scale = computed(() => {
 const y = (v) => pad.top + innerH.value - (v / scale.value.max) * innerH.value
 
 const slot = computed(() => innerW.value / Math.max(1, props.data.length))
-const barW = computed(() => Math.max(2, Math.min(28, slot.value - 2)))
+const barW = computed(() => Math.min(slot.value, Math.max(2, Math.min(28, slot.value - 2))))
 const bars = computed(() =>
   props.data.map((d, i) => {
     const x = pad.left + i * slot.value + (slot.value - barW.value) / 2
@@ -78,7 +78,7 @@ const tipStyle = computed(() => {
 
 <template>
   <div ref="wrap" class="chart" :style="{ height: height + 'px' }" @mouseleave="hover = null">
-    <svg :width="width" :height="height" role="img">
+    <svg width="100%" :height="height" role="img">
       <g>
         <template v-for="t in scale.ticks" :key="t">
           <line :x1="pad.left" :x2="width - pad.right" :y1="y(t)" :y2="y(t)" class="grid" :class="{ base: t === 0 }" />
@@ -95,7 +95,7 @@ const tipStyle = computed(() => {
       <rect
         v-for="b in bars" :key="'h' + b.key"
         :x="pad.left + b.i * slot" :y="pad.top" :width="slot" :height="innerH"
-        fill="transparent" @mouseenter="hover = b"
+        fill="transparent" @mouseenter="hover = b" @click="hover = b"
       />
     </svg>
     <div v-if="hover" class="tip" :style="tipStyle">
