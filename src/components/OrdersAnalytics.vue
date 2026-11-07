@@ -174,7 +174,7 @@ const pct = (v) => `${Math.round(v)}%`
     <div class="kpis">
       <div v-for="k in kpis" :key="k.label" class="card kpi">
         <div class="kpi-label">{{ k.label }}</div>
-        <div class="kpi-value num">{{ k.value }}</div>
+        <div class="kpi-value num">{{ k.value.replace(' OMR', '') }}<span v-if="k.value.endsWith(' OMR')" class="kpi-unit">OMR</span></div>
         <div class="kpi-delta num" :class="k.delta && !k.delta.flat ? (k.delta.good ? 'up' : 'down') : ''">
           <template v-if="k.delta">{{ k.delta.text }} <span class="muted">vs previous {{ days }} days</span></template>
           <span v-else class="muted">No earlier data</span>
@@ -186,8 +186,8 @@ const pct = (v) => `${Math.round(v)}%`
       <div class="card-head">
         <h3>{{ metric === 'revenue' ? 'Revenue' : 'Orders' }} per day</h3>
         <div class="seg">
-          <button :class="{ on: metric === 'revenue' }" @click="metric = 'revenue'">Revenue</button>
-          <button :class="{ on: metric === 'orders' }" @click="metric = 'orders'">Orders</button>
+          <button :class="{ on: metric === 'revenue' }" :aria-pressed="metric === 'revenue'" @click="metric = 'revenue'">Revenue</button>
+          <button :class="{ on: metric === 'orders' }" :aria-pressed="metric === 'orders'" @click="metric = 'orders'">Orders</button>
         </div>
       </div>
       <div class="card-body">
@@ -255,32 +255,33 @@ const pct = (v) => `${Math.round(v)}%`
 <style scoped>
 .analytics { transition: opacity .15s; }
 .analytics.busy { opacity: .6; }
-.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
-.kpi { padding: 16px 18px; margin: 0; }
-.kpi-label { color: var(--text-2); font-size: 13px; font-weight: 500; }
-.kpi-value { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin: 6px 0 4px; }
-.kpi-delta { font-size: 12.5px; font-weight: 500; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+.kpi { padding: 22px; margin: 0; }
+.kpi-label { color: var(--text-2); font-size: 12px; font-weight: 500; }
+.kpi-value { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; font-size: clamp(24px, 2vw, 32px); font-weight: 600; letter-spacing: -.8px; margin: 14px 0 12px; overflow-wrap: anywhere; }
+.kpi-unit { font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
+.kpi-delta { font-size: 11px; font-weight: 600; line-height: 1.7; }
 .kpi-delta.up { color: var(--ok); }
 .kpi-delta.down { color: var(--danger); }
 .kpi-delta .muted { font-weight: 400; }
 
-.cols { display: grid; grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 1fr)); gap: 16px; }
-.cols .card { margin-bottom: 16px; }
-.rank { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 1fr)); gap: 20px; }
+.cols .card { margin-bottom: 20px; }
+.rank { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
 .rank-top { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-size: 13.5px; }
 .rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-top .num { flex-shrink: 0; }
-.rank-bar { height: 6px; background: var(--line-soft); border-radius: 99px; overflow: hidden; }
+.rank-bar { height: 4px; background: var(--line-soft); border-radius: 99px; overflow: hidden; }
 .rank-bar span { display: block; height: 100%; background: var(--chart); border-radius: 99px; min-width: 2px; }
 .rank-row .small { margin-top: 4px; }
 
-.mix-title { font-size: 12.5px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+.mix-title { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 10px; }
 .stacked { display: flex; gap: 2px; height: 10px; border-radius: 99px; overflow: hidden; background: var(--line-soft); }
 .stacked span { display: block; height: 100%; }
-.seg-new { background: #3b7fd9; }
-.seg-processing { background: #e0a030; }
-.seg-done { background: #2f9e67; }
-.seg-cancelled { background: #d64545; }
+.seg-new { background: #7398ac; }
+.seg-processing { background: #c4a15b; }
+.seg-done { background: #678b54; }
+.seg-cancelled { background: #c27a6a; }
 .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 10px; font-size: 13px; }
 .legend div { display: flex; align-items: center; gap: 8px; }
 .legend i { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
@@ -297,14 +298,19 @@ const pct = (v) => `${Math.round(v)}%`
 @media (max-width: 720px) {
   .cols { grid-template-columns: minmax(0, 1fr); }
 }
-@media (max-width: 640px) {
-  .kpi { padding: 12px; }
-  .kpi-value { font-size: 20px; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .kpis { gap: 10px; margin-bottom: 16px; }
+  .kpi { padding: 16px; }
+  .kpi-value { font-size: 24px; margin: 10px 0 8px; }
+  .kpi-label { font-size: 11px; }
+  .kpi-delta .muted { display: block; }
+  .cols { gap: 0; }
   .rank-name { overflow-wrap: anywhere; white-space: normal; }
   .legend { gap: 6px 12px; }
   .legend div { gap: 4px; }
 }
 @media (max-width: 380px) {
-  .legend { grid-template-columns: 1fr; }
+  .kpi { padding: 12px; }
+  .kpi-value { font-size: 21px; }
 }
 </style>

@@ -84,18 +84,18 @@ onMounted(load)
     </div>
   </form>
 
-  <div class="card">
+  <div class="card promotions-card">
     <div class="scroll">
       <table>
         <thead><tr><th>Promotion</th><th>Code</th><th>Discount</th><th>Applies to</th><th>Status</th><th></th></tr></thead>
         <tbody>
           <tr v-for="p in promos" :key="p.id">
-            <td><b>{{ p.title }}</b><div v-if="p.description" class="muted small">{{ p.description }}</div></td>
-            <td><code v-if="p.code" class="code">{{ p.code }}</code><span v-else class="muted">—</span></td>
-            <td class="num">{{ p.discount_percentage ? p.discount_percentage + '%' : '—' }}</td>
-            <td class="sub">{{ p.categories?.join(', ') || 'All products' }}</td>
-            <td><span class="pill" :class="p.active ? 's-done' : 's-off'">{{ p.active ? 'Active' : 'Off' }}</span></td>
-            <td class="r">
+            <td class="promotion-name"><b>{{ p.title }}</b><div v-if="p.description" class="muted small">{{ p.description }}</div></td>
+            <td data-label="Code"><code v-if="p.code" class="code">{{ p.code }}</code><span v-else class="muted">—</span></td>
+            <td class="num" data-label="Discount">{{ p.discount_percentage ? p.discount_percentage + '%' : '—' }}</td>
+            <td class="sub promotion-categories" data-label="Applies to">{{ p.categories?.join(', ') || 'All products' }}</td>
+            <td class="promotion-status"><span class="pill" :class="p.active ? 's-done' : 's-off'">{{ p.active ? 'Active' : 'Off' }}</span></td>
+            <td class="r promotion-actions">
               <div class="row" style="justify-content: flex-end; flex-wrap: nowrap">
                 <button class="btn sm" @click="edit(p)">Edit</button>
                 <button class="btn sm" @click="toggle(p)">{{ p.active ? 'Disable' : 'Enable' }}</button>
@@ -113,8 +113,19 @@ onMounted(load)
 <style scoped>
 .form-grid { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 14px; }
 .code { background: var(--hover); border: 1px solid var(--line); padding: 2px 6px; border-radius: 5px; }
-@media (max-width: 640px) {
+.promotions-card { overflow: hidden; }
+@media (max-width: 700px) {
   .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .form-grid .field:first-child { grid-column: 1 / -1; }
+  .promotions-card table, .promotions-card tbody { display: block; min-width: 0; }
+  .promotions-card thead { display: none; }
+  .promotions-card tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 12px; padding: 20px 16px; border-bottom: 1px solid var(--line); }
+  .promotions-card tr:last-child { border: 0; }
+  .promotions-card td { display: block; padding: 0; border: 0; overflow-wrap: anywhere; }
+  .promotions-card td[data-label]::before { content: attr(data-label); display: block; color: var(--muted); font-size: 11px; margin-bottom: 5px; }
+  .promotion-name { grid-column: 1; }
+  .promotion-status { grid-column: 2; grid-row: 1; text-align: right; }
+  .promotion-categories, .promotion-actions, .promotions-card .empty { grid-column: 1 / -1; }
+  .promotion-actions .btn { flex: 1; }
 }
 </style>

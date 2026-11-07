@@ -72,9 +72,9 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 <template>
   <div class="page-head">
     <h1>Orders</h1>
-    <div class="row">
+    <div class="row period-controls">
       <div class="seg">
-        <button v-for="r in RANGES" :key="r" :class="{ on: days === r }" @click="days = r">{{ r }} days</button>
+        <button v-for="r in RANGES" :key="r" :class="{ on: days === r }" :aria-pressed="days === r" @click="days = r">{{ r }} days</button>
       </div>
       <button class="btn icon" title="Refresh" :disabled="loading" @click="refreshAll">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" /></svg>
@@ -84,8 +84,8 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 
   <OrdersAnalytics :days="days" :version="version" />
 
-  <div class="card">
-    <div class="card-head">
+  <div class="card orders-card">
+    <div class="card-head orders-toolbar">
       <div class="tabs">
         <button :class="{ on: status === '' }" @click="status = ''">All <span class="num">{{ stats?.orders_total ?? '' }}</span></button>
         <button v-for="s in STATUSES" :key="s" :class="{ on: status === s }" @click="status = s">
@@ -94,7 +94,7 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
       </div>
       <label class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-        <input v-model="q" placeholder="Order #, name, email or phone" />
+        <input v-model="q" aria-label="Order #, name, email or phone" placeholder="Order #, name, email or phone" />
       </label>
     </div>
     <p v-if="error" class="error" style="padding: 0 18px">{{ error }}</p>
@@ -106,16 +106,16 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
         </thead>
         <tbody>
           <tr v-for="o in orders" :key="o.order_number" class="click" :class="{ sel: openId === o.order_number }" @click="openId = o.order_number">
-            <td><b class="num">{{ o.order_number }}</b><div class="muted small cap">{{ o.delivery_method }}</div></td>
-            <td class="num">{{ fmtDate(o.created_at) }}<div class="muted small">{{ fmtTime(o.created_at) }}</div></td>
-            <td>{{ o.name }}<div class="muted small num">{{ o.phone }}</div></td>
-            <td>
+            <td class="order-id"><button class="order-link num" @click.stop="openId = o.order_number">{{ o.order_number }}</button><div class="muted small cap">{{ o.delivery_method }}</div></td>
+            <td class="num order-date">{{ fmtDate(o.created_at) }}<div class="muted small">{{ fmtTime(o.created_at) }}</div></td>
+            <td class="order-customer">{{ o.name }}<div class="muted small num">{{ o.phone }}</div></td>
+            <td class="order-payment" data-label="Payment">
               {{ payLabel(o) }}
               <div v-if="o.payment_method === 'online'" class="muted small cap">{{ o.payment_status || 'unknown' }}</div>
             </td>
-            <td><span class="pill" :class="'s-' + o.status">{{ o.status }}</span></td>
-            <td class="r num"><b>{{ omr(o.total) }}</b></td>
-            <td class="r" @click.stop>
+            <td class="order-status"><span class="pill" :class="'s-' + o.status">{{ o.status }}</span></td>
+            <td class="r num order-total" data-label="Total"><b>{{ omr(o.total) }}</b></td>
+            <td class="r order-actions" @click.stop>
               <div class="row actions">
                 <button v-if="o.status === 'new'" class="btn sm" @click="setStatus(o, 'processing')">Start</button>
                 <button v-if="o.status === 'new' || o.status === 'processing'" class="btn sm primary" @click="setStatus(o, 'done')">Complete</button>
@@ -210,22 +210,51 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 </template>
 
 <style scoped>
-.tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
 .tabs button {
   font: inherit; font-size: 13px; font-weight: 500; border: 0; background: none; color: var(--text-2);
-  padding: 6px 10px; border-radius: 7px; cursor: pointer;
+  padding: 8px 10px; border-radius: 7px; cursor: pointer;
 }
-.tabs button .num { color: var(--muted); margin-left: 2px; }
+.tabs button .num { color: var(--muted); margin-left: 4px; font-size: 11px; }
 .tabs button:hover { background: var(--hover); }
-.tabs button.on { background: var(--hover); color: var(--text); }
+.tabs button.on { background: #eaf0e2; color: var(--ink); }
 .tabs button.on .num { color: var(--text-2); }
 .cap { text-transform: capitalize; }
 .search { width: 280px; max-width: 100%; }
 .orders td { white-space: nowrap; }
 .actions { justify-content: flex-end; flex-wrap: nowrap; }
+.order-link { font: inherit; font-weight: 600; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; }
+.order-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.orders-card { overflow: hidden; }
+.orders-toolbar { gap: 16px; }
 
-@media (max-width: 640px) {
-  .tabs button { min-height: 44px; }
+@media (max-width: 700px) {
+  .period-controls { gap: 6px; }
+  .period-controls .seg button { padding-inline: 10px; }
+  .orders-toolbar { display: flex; flex-direction: column-reverse; align-items: stretch; gap: 12px; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .tabs button { min-height: 44px; flex-shrink: 0; white-space: nowrap; font-size: 12px; padding-inline: 9px; }
   .search { width: 100%; }
+  .scroll > .orders { display: block; min-width: 0; }
+  .orders thead { display: none; }
+  .orders tbody { display: block; }
+  .orders tr.click { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'id status' 'customer date' 'payment total' 'actions actions'; gap: 14px 12px; padding: 20px 16px; border-bottom: 1px solid var(--line); }
+  .orders tr.click:last-child { border-bottom: 0; }
+  .orders td { display: block; padding: 0; border: 0; white-space: normal; overflow-wrap: anywhere; }
+  .orders tr.click:hover td, .orders tr.sel td { background: none; }
+  .orders tr.sel { background: var(--hover); }
+  .order-id { grid-area: id; }
+  .order-status { grid-area: status; text-align: right; }
+  .order-date { grid-area: date; text-align: right; font-size: 12px; }
+  .order-customer { grid-area: customer; }
+  .order-payment { grid-area: payment; font-size: 12px; }
+  .order-total { grid-area: total; }
+  .order-payment::before, .order-total::before { content: attr(data-label); display: block; color: var(--muted); font-size: 11px; margin-bottom: 3px; }
+  .order-actions { grid-area: actions; padding-top: 14px !important; border-top: 1px solid var(--line-soft) !important; }
+  .actions .btn { flex: 1; }
+  .orders .empty { padding: 32px 16px; }
+  .card-foot { gap: 12px; }
+  .card-foot > .row { width: 100%; }
+  .card-foot > .row > span { margin-right: auto; }
 }
 </style>

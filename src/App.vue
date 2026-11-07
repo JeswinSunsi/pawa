@@ -46,9 +46,9 @@ async function login() {
     <aside class="side">
       <div class="brand"><div class="brand-mark">M</div><span>MSouq Admin</span></div>
       <nav class="nav">
-        <button v-for="(t, key) in tabs" :key="key" class="nav-item" :class="{ on: tab === key }" @click="tab = key">
+        <button v-for="(t, key) in tabs" :key="key" class="nav-item" :class="{ on: tab === key }" :aria-current="tab === key ? 'page' : undefined" @click="tab = key">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="t.icon" /></svg>
-          {{ t.label }}
+          <span>{{ t.label }}</span>
         </button>
       </nav>
       <div class="side-foot">
