@@ -20,13 +20,14 @@ const slot = ref('all')
 const slides = ref([])
 const error = ref('')
 const msg = ref('')
+const loaded = ref(false)
 const isCustom = computed(() => !!saved.value[slot.value])
 
 async function load() {
   try {
     saved.value = await api('/admin/banners')
     pick(slot.value)
-  } catch (e) { error.value = e.message }
+  } catch (e) { error.value = e.message } finally { loaded.value = true }
 }
 function pick(id) {
   slot.value = id
@@ -83,7 +84,7 @@ const slotLabel = computed(() => SLOTS.find((s) => s.id === slot.value)?.label)
       <div class="card-head">
         <div>
           <h3>{{ slotLabel }}</h3>
-          <div class="muted small" style="margin-top: 2px">{{ isCustom ? 'Using your slides' : 'Using the built-in images' }}</div>
+          <div class="muted small" style="margin-top: 2px">{{ !loaded ? ' ' : isCustom ? 'Using your slides' : 'Using the built-in images' }}</div>
         </div>
         <button v-if="isCustom" class="btn sm danger" @click="reset">Reset to built-in</button>
       </div>
@@ -126,15 +127,16 @@ const slotLabel = computed(() => SLOTS.find((s) => s.id === slot.value)?.label)
           </div>
         </div>
 
-        <div v-if="!slides.length" class="empty" style="padding: 24px">No custom slides</div>
+        <div v-if="!loaded" class="loader" role="status">Loading banners…</div>
+        <div v-else-if="!slides.length" class="empty" style="padding: 24px">No custom slides</div>
 
         <p v-if="msg" class="success" style="margin: 0">{{ msg }}</p>
         <p v-if="error" class="error" style="margin: 0">{{ error }}</p>
       </div>
 
       <div class="card-foot">
-        <button class="btn" @click="add">Add slide</button>
-        <button class="btn primary" @click="save">Save banners</button>
+        <button class="btn" :disabled="!loaded" @click="add">Add slide</button>
+        <button class="btn primary" :disabled="!loaded" @click="save">Save banners</button>
       </div>
     </div>
   </div>

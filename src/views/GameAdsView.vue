@@ -7,13 +7,14 @@ const ads = ref([])
 const error = ref('')
 const msg = ref('')
 const saving = ref(false)
+const loaded = ref(false)
 const activeCount = computed(() => ads.value.filter((a) => a.active && a.image.trim()).length)
 
 async function load() {
   try {
     const data = await api('/admin/game-ads')
     ads.value = data.ads.map((a) => ({ image: a.image || '', link: a.link || '', alt: a.alt || '', active: a.active !== false }))
-  } catch (e) { error.value = e.message }
+  } catch (e) { error.value = e.message } finally { loaded.value = true }
 }
 function add() {
   ads.value.push({ image: '', link: '', alt: '', active: true })
@@ -50,7 +51,7 @@ onMounted(load)
     <div class="card-head">
       <div>
         <h3>Play again ads</h3>
-        <div class="muted small" style="margin-top: 2px">{{ activeCount }} active</div>
+        <div class="muted small" style="margin-top: 2px">{{ loaded ? `${activeCount} active` : ' ' }}</div>
       </div>
     </div>
 
@@ -84,15 +85,16 @@ onMounted(load)
         </div>
       </div>
 
-      <div v-if="!ads.length" class="empty" style="padding: 24px">No ads. Play again starts the game straight away.</div>
+      <div v-if="!loaded" class="loader" role="status">Loading ads…</div>
+      <div v-else-if="!ads.length" class="empty" style="padding: 24px">No ads. Play again starts the game straight away.</div>
 
       <p v-if="msg" class="success" style="margin: 0">{{ msg }}</p>
       <p v-if="error" class="error" style="margin: 0">{{ error }}</p>
     </div>
 
     <div class="card-foot">
-      <button class="btn" @click="add">Add ad</button>
-      <button class="btn primary" :disabled="saving" @click="save">{{ saving ? 'Saving…' : 'Save ads' }}</button>
+      <button class="btn" :disabled="!loaded" @click="add">Add ad</button>
+      <button class="btn primary" :disabled="saving || !loaded" @click="save">{{ saving ? 'Saving…' : 'Save ads' }}</button>
     </div>
   </div>
 </template>

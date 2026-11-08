@@ -13,6 +13,7 @@ const status = ref('')
 const q = ref('')
 const error = ref('')
 const loading = ref(false)
+const loaded = ref(false)
 const openId = ref(null)
 const open = computed(() => orders.value.find((o) => o.order_number === openId.value) || null)
 const pages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
@@ -28,6 +29,7 @@ async function load() {
     orders.value = list.orders
     total.value = list.total
     stats.value = s
+    loaded.value = true
   } catch (e) { error.value = e.message } finally { loading.value = false }
 }
 
@@ -105,7 +107,7 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
     <p v-if="error" class="error" style="padding: 0 18px">{{ error }}</p>
 
     <div class="scroll">
-      <table class="orders">
+      <table class="orders" :class="{ 'is-refreshing': loading && loaded }">
         <thead>
           <tr><th>Order</th><th>Date</th><th>Customer</th><th>Payment</th><th>Status</th><th class="r">Total</th><th></th></tr>
         </thead>
@@ -128,13 +130,14 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
               </div>
             </td>
           </tr>
-          <tr v-if="!orders.length && !loading"><td colspan="7" class="empty">No orders found</td></tr>
+          <tr v-if="!loaded && loading"><td colspan="7"><div class="loader" role="status">Loading orders…</div></td></tr>
+          <tr v-else-if="!orders.length && !loading"><td colspan="7" class="empty">No orders found</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="card-foot">
-      <span class="muted small num">{{ total.toLocaleString() }} order{{ total === 1 ? '' : 's' }}</span>
+      <span class="muted small num">{{ loaded ? `${total.toLocaleString()} order${total === 1 ? '' : 's'}` : '' }}</span>
       <div class="row">
         <span class="muted small num">Page {{ page }} of {{ pages }}</span>
         <button class="btn sm" :disabled="page <= 1" @click="page--">Previous</button>

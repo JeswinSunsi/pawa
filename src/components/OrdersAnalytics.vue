@@ -16,6 +16,7 @@ const DAY = 86400000
 const orders = ref([])
 const capped = ref(false)
 const loading = ref(false)
+const loaded = ref(false)
 const error = ref('')
 const metric = ref('revenue')
 
@@ -42,6 +43,7 @@ async function load() {
     }
     capped.value = more
     orders.value = out
+    loaded.value = true
   } catch (e) { error.value = e.message } finally { loading.value = false }
 }
 watch(() => [props.days, props.version], load)
@@ -168,8 +170,9 @@ const pct = (v) => `${Math.round(v)}%`
 </script>
 
 <template>
-  <div class="analytics" :class="{ busy: loading }">
-    <p v-if="error" class="error" style="margin: 0 0 12px">{{ error }}</p>
+  <p v-if="error" class="error" style="margin: 0 0 12px">{{ error }}</p>
+  <div v-if="!loaded && loading" class="card"><div class="loader" role="status">Loading analytics…</div></div>
+  <div v-else-if="loaded" class="analytics" :class="{ busy: loading }">
 
     <div class="kpis">
       <div v-for="k in kpis" :key="k.label" class="card kpi">

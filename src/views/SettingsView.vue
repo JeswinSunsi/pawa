@@ -5,8 +5,9 @@ import { api } from '../api'
 const form = ref({ free_delivery_min_spend: 0, delivery_fee: 0 })
 const msg = ref('')
 const error = ref('')
+const loaded = ref(false)
 onMounted(async () => {
-  try { form.value = await api('/admin/settings') } catch (e) { error.value = e.message }
+  try { form.value = await api('/admin/settings') } catch (e) { error.value = e.message } finally { loaded.value = true }
 })
 async function save() {
   error.value = ''
@@ -28,7 +29,8 @@ async function save() {
 
   <form class="card" style="max-width: 560px" @submit.prevent="save">
     <div class="card-head"><h3>Delivery fees</h3></div>
-    <div class="card-body stack">
+    <div v-if="!loaded" class="loader" role="status">Loading settings…</div>
+    <div v-else class="card-body stack">
       <label class="field">Free delivery from
         <div class="affix"><input v-model="form.free_delivery_min_spend" type="number" step="0.001" min="0" required /><span>OMR</span></div>
         <span class="hint">Orders at or above this amount, after discounts, ship free. Set to 0 to make delivery always free.</span>
@@ -41,7 +43,7 @@ async function save() {
       <p v-if="error" class="error" style="margin: 0">{{ error }}</p>
     </div>
     <div class="card-foot" style="justify-content: flex-end">
-      <button class="btn primary">Save</button>
+      <button class="btn primary" :disabled="!loaded">Save</button>
     </div>
   </form>
 </template>

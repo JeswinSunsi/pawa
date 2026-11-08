@@ -124,11 +124,11 @@ onMounted(load)
 
     <div class="card">
       <div class="card-head">
-        <h3>{{ where }} <span class="muted num">({{ selected.length }})</span></h3>
+        <h3>{{ where }} <span v-if="!loading" class="muted num">({{ selected.length }})</span></h3>
       </div>
 
       <div class="card-body stack">
-        <div v-if="loading" class="empty">Loading…</div>
+        <div v-if="loading" class="loader" role="status">Loading products…</div>
         <template v-else>
           <div v-if="notice" class="notice">{{ notice }}</div>
           <ol v-if="selected.length" class="list">

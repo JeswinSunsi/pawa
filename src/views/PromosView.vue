@@ -6,6 +6,7 @@ const MAX_PRODUCTS = 100
 const promos = ref([])
 const error = ref('')
 const saving = ref(false)
+const loaded = ref(false)
 const blank = () => ({
   id: null, title: '', description: '', code: '', discountType: 'percentage',
   discountValue: 10, categoriesText: '', productIds: [], active: true,
@@ -85,7 +86,7 @@ async function addProductId() {
 }
 
 async function load() {
-  try { promos.value = await api('/admin/promotions') } catch (e) { error.value = e.message }
+  try { promos.value = await api('/admin/promotions') } catch (e) { error.value = e.message } finally { loaded.value = true }
 }
 
 function edit(p) {
@@ -265,7 +266,8 @@ onMounted(load)
               </div>
             </td>
           </tr>
-          <tr v-if="!promos.length"><td colspan="6" class="empty">No promotions yet</td></tr>
+          <tr v-if="!loaded"><td colspan="6"><div class="loader" role="status">Loading promotions…</div></td></tr>
+          <tr v-else-if="!promos.length"><td colspan="6" class="empty">No promotions yet</td></tr>
         </tbody>
       </table>
     </div>
