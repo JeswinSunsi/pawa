@@ -6,7 +6,6 @@ const MAX_PRODUCTS = 200
 const catalogue = ref([])
 const selected = ref([])
 const savedIds = ref([])
-const custom = ref(false)
 const loading = ref(true)
 const saving = ref(false)
 const search = ref('')
@@ -45,7 +44,6 @@ async function load() {
 function apply(sales) {
   savedIds.value = [...sales.product_ids]
   selected.value = [...sales.product_ids]
-  custom.value = sales.custom
 }
 
 function add(p) {
@@ -72,15 +70,6 @@ async function save() {
     apply(await api('/admin/sales', { method: 'PUT', body: { product_ids: selected.value } }))
     msg.value = selected.value.length ? 'Saved. Live on the store now.' : 'Saved. The Sales page is now empty.'
   } catch (e) { error.value = e.message } finally { saving.value = false }
-}
-async function reset() {
-  if (!confirm('Go back to the built-in Sales product list?')) return
-  error.value = ''
-  msg.value = ''
-  try {
-    apply(await api('/admin/sales', { method: 'DELETE' }))
-    msg.value = 'Reset to the built-in list.'
-  } catch (e) { error.value = e.message }
 }
 
 onMounted(load)
@@ -118,11 +107,7 @@ onMounted(load)
 
     <div class="card editor">
       <div class="card-head">
-        <div>
-          <h3>On the Sales page <span class="muted num">({{ selected.length }})</span></h3>
-          <div class="muted small" style="margin-top: 2px">{{ custom ? 'Using your list' : 'Using the built-in list' }}</div>
-        </div>
-        <button v-if="custom" class="btn sm danger" @click="reset">Reset to built-in</button>
+        <h3>On the Sales page <span class="muted num">({{ selected.length }})</span></h3>
       </div>
 
       <div class="card-body stack">
