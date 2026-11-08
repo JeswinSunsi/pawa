@@ -4,6 +4,7 @@ import { api, token, setToken } from './api'
 import OrdersView from './views/OrdersView.vue'
 import PromosView from './views/PromosView.vue'
 import BannersView from './views/BannersView.vue'
+import GameAdsView from './views/GameAdsView.vue'
 import ProductListView from './views/ProductListView.vue'
 import SettingsView from './views/SettingsView.vue'
 import logo from './assets/msouq-logo.png'
@@ -30,6 +31,7 @@ const tabs = {
     },
   },
   banners: { label: 'Banners', view: BannersView, icon: 'M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6' },
+  gameAds: { label: 'Game ads', view: GameAdsView, icon: 'M6 11h4M8 9v4M15 12h.01M18 10h.01M17.3 5H6.7a4 4 0 0 0-4 3.6l-.7 6.1A3 3 0 0 0 5 18c1 0 1.9-.5 2.4-1.3L9 15h6l1.6 1.7c.5.8 1.4 1.3 2.4 1.3a3 3 0 0 0 3-3.3l-.7-6.1A4 4 0 0 0 17.3 5z' },
   settings: { label: 'Delivery', view: SettingsView, icon: 'M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z' },
 }
 const saved = localStorage.getItem('adminTab')
