@@ -115,7 +115,7 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
           <tr v-for="o in orders" :key="o.order_number" class="click" :class="{ sel: openId === o.order_number }" @click="openId = o.order_number">
             <td class="order-id"><button class="order-link num" @click.stop="openId = o.order_number">{{ o.order_number }}</button><div class="muted small cap">{{ o.delivery_method }}</div></td>
             <td class="num order-date">{{ fmtDate(o.created_at) }}<div class="muted small">{{ fmtTime(o.created_at) }}</div></td>
-            <td class="order-customer">{{ o.name }}<div class="muted small num">{{ o.phone }}</div></td>
+            <td class="order-customer"><a class="customer-link" :href="'tel:' + o.phone" :title="'Call ' + o.phone" @click.stop>{{ o.name }}</a><div class="muted small num">{{ o.phone }}</div></td>
             <td class="order-payment" data-label="Payment">
               {{ payLabel(o) }}
               <div v-if="o.payment_method === 'online'" class="muted small cap">{{ o.payment_status || 'unknown' }}</div>
@@ -124,9 +124,7 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
             <td class="r num order-total" data-label="Total"><b>{{ omr(o.total) }}</b></td>
             <td class="r order-actions" @click.stop>
               <div class="row actions">
-                <button v-if="o.status === 'new'" class="btn sm" :disabled="paymentPending(o)" @click="setStatus(o, 'processing')">Start</button>
-                <button v-if="o.status === 'new' || o.status === 'processing'" class="btn sm primary" :disabled="paymentPending(o)" @click="setStatus(o, 'done')">Complete</button>
-                <button v-if="o.status === 'done' || o.status === 'cancelled'" class="btn sm" @click="setStatus(o, 'new')">Reopen</button>
+                <button class="btn sm" @click="openId = o.order_number">View</button>
               </div>
             </td>
           </tr>
@@ -198,10 +196,10 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
         <section>
           <div class="section-title">Customer email</div>
           <div class="email-row">
-            <div class="small">
+            <div class="small email-status">
               <template v-if="emailsSent(open).length">
                 <span class="pill s-done">Sent</span>
-                <span class="muted num"> {{ fmt(emailsSent(open).at(-1).at) }}<template v-if="emailsSent(open).length > 1"> · {{ emailsSent(open).length }} times</template></span>
+                <span class="muted num">{{ fmt(emailsSent(open).at(-1).at) }}<template v-if="emailsSent(open).length > 1"> · {{ emailsSent(open).length }} times</template></span>
               </template>
               <span v-else-if="emailBlocked(open)" class="muted">{{ emailBlocked(open) }}</span>
               <span v-else class="muted">Order placed email not sent yet</span>
@@ -214,12 +212,13 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 
         <section v-if="open.status_history?.length">
           <div class="section-title">History</div>
-          <div class="timeline">
-            <div v-for="(h, i) in open.status_history" :key="i">
-              <span class="pill" :class="'s-' + h.status">{{ h.status }}</span>
-              <span class="muted num">{{ fmt(h.at) }}</span>
-            </div>
-          </div>
+          <ol class="history">
+            <li v-for="(h, i) in open.status_history" :key="i">
+              <span class="dot" :class="'s-' + h.status" />
+              <div class="cap h-status">{{ h.status }}</div>
+              <div class="muted small num">{{ fmt(h.at) }}</div>
+            </li>
+          </ol>
         </section>
       </div>
 
@@ -256,6 +255,16 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 .orders-card { overflow: hidden; }
 .orders-toolbar { gap: 16px; }
 .email-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.email-status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.customer-link { color: inherit; text-decoration: none; }
+.customer-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.history { list-style: none; margin: 0; padding: 0; }
+.history li { position: relative; padding: 0 0 22px 26px; font-size: 13px; }
+.history li:last-child { padding-bottom: 0; }
+.history .dot { position: absolute; left: 0; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px var(--panel); }
+.history li:not(:last-child)::after { content: ''; position: absolute; left: 5px; top: 20px; bottom: 9px; width: 2px; background: var(--line); }
+.history li:not(:last-child)::before { content: ''; position: absolute; left: 1px; bottom: 4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--line); }
+.h-status { font-weight: 500; margin-bottom: 2px; }
 .email-row .btn:disabled { background: var(--line-soft); border-color: var(--line); color: var(--muted); opacity: 1; cursor: not-allowed; }
 
 @media (max-width: 700px) {
