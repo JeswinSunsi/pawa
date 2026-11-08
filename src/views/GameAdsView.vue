@@ -78,7 +78,7 @@ onMounted(load)
         <div class="new-preview">
           <img v-if="draft.image.trim()" :src="previewUrl(draft.image.trim())" class="ad-thumb" alt="" />
           <div v-else class="ad-thumb empty-thumb">Preview</div>
-          <div class="notice small">Portrait or square images work best on phones (e.g. 1080×1350 or 1080×1080).</div>
+          <div class="notice small">Portrait images work best on phones.</div>
         </div>
         <label class="field">Image URL<input v-model="draft.image" placeholder="https://…" required /></label>
         <label class="field"><span>Link <span class="hint">(optional)</span></span><input v-model="draft.link" placeholder="/sales or https://…" /></label>
