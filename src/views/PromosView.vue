@@ -163,6 +163,7 @@ onMounted(load)
     <h1>Promo codes</h1>
   </div>
 
+  <div class="split">
   <form class="card" @submit.prevent="save">
     <div class="card-head">
       <h3>{{ form.id ? 'Edit promotion' : 'New promotion' }}</h3>
@@ -247,30 +248,34 @@ onMounted(load)
     </div>
   </form>
 
-  <div class="card promotions-card">
-    <div class="scroll">
-      <table>
-        <thead><tr><th>Promotion</th><th>Code</th><th>Discount</th><th>Applies to</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-          <tr v-for="p in promos" :key="p.id">
-            <td class="promotion-name"><b>{{ p.title }}</b><div v-if="p.description" class="muted small">{{ p.description }}</div></td>
-            <td data-label="Code"><code v-if="p.code" class="code">{{ p.code }}</code><span v-else class="muted">—</span></td>
-            <td class="num" data-label="Discount">{{ p.discount_amount != null ? omr(p.discount_amount) : p.discount_percentage ? p.discount_percentage + '%' : '—' }}</td>
-            <td class="sub promotion-categories" data-label="Applies to">{{ scopeLabel(p) }}</td>
-            <td class="promotion-status"><span class="pill" :class="p.active ? 's-done' : 's-off'">{{ p.active ? 'Active' : 'Off' }}</span></td>
-            <td class="r promotion-actions">
-              <div class="row" style="justify-content: flex-end; flex-wrap: nowrap">
-                <button class="btn sm" :disabled="saving" @click="edit(p)">Edit</button>
-                <button class="btn sm" @click="toggle(p)">{{ p.active ? 'Disable' : 'Enable' }}</button>
-                <button class="btn sm danger" @click="remove(p)">Delete</button>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="!loaded"><td colspan="6"><div class="loader" role="status">Loading promotions…</div></td></tr>
-          <tr v-else-if="!promos.length"><td colspan="6" class="empty">No promotions yet</td></tr>
-        </tbody>
-      </table>
+  <section class="card">
+    <div class="card-head">
+      <h3>Existing promotions<span v-if="loaded" class="count num">{{ promos.length }}</span></h3>
     </div>
+    <div v-if="!loaded" class="card-body"><div class="loader" role="status">Loading promotions…</div></div>
+    <div v-else-if="!promos.length" class="empty">No promotions yet</div>
+    <ul v-else class="promo-list">
+      <li v-for="p in promos" :key="p.id" class="promo" :class="{ editing: form.id === p.id }">
+        <div class="promo-top">
+          <div class="promo-name">
+            <b>{{ p.title }}</b>
+            <div v-if="p.description" class="muted small">{{ p.description }}</div>
+          </div>
+          <span class="pill" :class="p.active ? 's-done' : 's-off'">{{ p.active ? 'Active' : 'Off' }}</span>
+        </div>
+        <dl class="promo-meta">
+          <div><dt>Code</dt><dd><code v-if="p.code" class="code">{{ p.code }}</code><span v-else class="muted">—</span></dd></div>
+          <div><dt>Discount</dt><dd class="num">{{ p.discount_amount != null ? omr(p.discount_amount) : p.discount_percentage ? p.discount_percentage + '%' : '—' }}</dd></div>
+          <div class="wide"><dt>Applies to</dt><dd class="sub">{{ scopeLabel(p) }}</dd></div>
+        </dl>
+        <div class="row promo-actions">
+          <button class="btn sm" :disabled="saving || form.id === p.id" @click="edit(p)">{{ form.id === p.id ? 'Editing' : 'Edit' }}</button>
+          <button class="btn sm" @click="toggle(p)">{{ p.active ? 'Disable' : 'Enable' }}</button>
+          <button class="btn sm danger" @click="remove(p)">Delete</button>
+        </div>
+      </li>
+    </ul>
+  </section>
   </div>
 </template>
 
@@ -288,18 +293,23 @@ onMounted(load)
 .product-result { width: 100%; }
 .product-selection li { padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; }
 .code { background: var(--hover); border: 1px solid var(--line); padding: 2px 6px; border-radius: 5px; }
-.promotions-card { overflow: hidden; }
+/* The form column is narrow, so the product search and ID inputs stack. */
+.product-picker .discount-grid { grid-template-columns: 1fr; }
+
+.promo-list { list-style: none; margin: 0; padding: 0; }
+.promo { display: grid; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--line-soft); }
+.promo:last-child { border-bottom: 0; }
+.promo.editing { background: #eff6ff; box-shadow: inset 3px 0 0 var(--accent); }
+.promo-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.promo-name { min-width: 0; overflow-wrap: anywhere; }
+.promo-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 2fr); gap: 12px; margin: 0; }
+.promo-meta dt { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+.promo-meta dd { margin: 0; overflow-wrap: anywhere; font-size: 13px; }
 @media (max-width: 700px) {
-  .form-grid, .product-picker .discount-grid { grid-template-columns: 1fr; }
-  .promotions-card table, .promotions-card tbody { display: block; min-width: 0; }
-  .promotions-card thead { display: none; }
-  .promotions-card tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 12px; padding: 20px 16px; border-bottom: 1px solid var(--line); }
-  .promotions-card tr:last-child { border: 0; }
-  .promotions-card td { display: block; padding: 0; border: 0; overflow-wrap: anywhere; }
-  .promotions-card td[data-label]::before { content: attr(data-label); display: block; color: var(--muted); font-size: 11px; margin-bottom: 5px; }
-  .promotion-name { grid-column: 1; }
-  .promotion-status { grid-column: 2; grid-row: 1; text-align: right; }
-  .promotion-categories, .promotion-actions, .promotions-card .empty { grid-column: 1 / -1; }
-  .promotion-actions .btn { flex: 1; }
+  .form-grid { grid-template-columns: 1fr; }
+  .promo { padding: 16px; }
+  .promo-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .promo-meta .wide { grid-column: 1 / -1; }
+  .promo-actions .btn { flex: 1; }
 }
 </style>

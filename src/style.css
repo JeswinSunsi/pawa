@@ -74,6 +74,11 @@ main { min-width: 0; padding: 36px 32px 56px; }
 .card-body { padding: 22px; }
 .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 22px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 
+/* Create form on the left, existing items on the right. */
+.split { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.split > .card { margin-bottom: 0; }
+.count { font-size: 12px; font-weight: 500; color: var(--muted); background: var(--hover); border-radius: 99px; padding: 2px 8px; margin-left: 6px; vertical-align: 2px; }
+
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .stack { display: grid; gap: 14px; }
 .muted { color: var(--muted); }
@@ -185,6 +190,7 @@ tr.sel td { background: #eff6ff; }
   .nav-item { flex-shrink: 0; }
   .account { grid-column: 2; grid-row: 1; }
   main { padding: 28px 24px 40px; }
+  .split { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 }
 
 @media (max-width: 700px) {
