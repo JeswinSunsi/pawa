@@ -19,7 +19,7 @@ const tabs = {
     label: 'Sales page', view: ProductListView, icon: 'M19 5 5 19M6.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM17.5 20a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
     props: {
       list: 'sales', title: 'Sales page', where: 'On the Sales page', warnNoDiscount: true,
-      notice: 'Shown in this order. The first 8 also appear as Trending Deals on the home page (and as suggestions in the cart). On the Sales page itself, the product with the biggest discount is featured at the top unless the shopper changes the sort.',
+      notice: 'The first 8 appear as Trending Deals on the home page (and as suggestions in the cart). On the Sales page, the product with the biggest discount is featured at the top.',
       emptyText: 'No products. The Sales page shows its empty message and the home page has no Trending Deals.',
       cutoff: { count: 8, label: 'Trending Deals shows the products above' },
     },
