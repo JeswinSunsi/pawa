@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { api, token, setToken } from './api'
+import DashboardView from './views/DashboardView.vue'
 import OrdersView from './views/OrdersView.vue'
 import PromosView from './views/PromosView.vue'
 import BannersView from './views/BannersView.vue'
@@ -11,6 +12,7 @@ import logo from './assets/msouq-logo.png'
 
 // Icon paths are 24x24 stroke icons.
 const tabs = {
+  dashboard: { label: 'Dashboard', view: DashboardView, icon: 'M3 3v18h18M7 16v-4M12 16V8M17 16v-7' },
   orders: { label: 'Orders', view: OrdersView, icon: 'M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0' },
   promos: { label: 'Promo codes', view: PromosView, icon: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01' },
   sales: {
@@ -35,7 +37,7 @@ const tabs = {
   settings: { label: 'Delivery', view: SettingsView, icon: 'M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z' },
 }
 const saved = localStorage.getItem('adminTab')
-const tab = ref(tabs[saved] ? saved : 'orders')
+const tab = ref(tabs[saved] ? saved : 'dashboard')
 watch(tab, (v) => localStorage.setItem('adminTab', v))
 
 const input = ref('')

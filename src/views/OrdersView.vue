@@ -1,15 +1,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { api, omr } from '../api'
-import OrdersAnalytics from '../components/OrdersAnalytics.vue'
 
 const STATUSES = ['new', 'processing', 'done', 'cancelled']
-const RANGES = [7, 30, 90]
-
-const savedRange = Number(localStorage.getItem('adminRange'))
-const days = ref(RANGES.includes(savedRange) ? savedRange : 30)
-watch(days, (v) => localStorage.setItem('adminRange', v))
-const version = ref(0)
 
 const stats = ref(null)
 const orders = ref([])
@@ -38,11 +31,6 @@ async function load() {
   } catch (e) { error.value = e.message } finally { loading.value = false }
 }
 
-function refreshAll() {
-  load()
-  version.value++
-}
-
 const paymentPending = (order) => order.payment_method === 'online' && order.payment_status === 'pending'
 
 async function setStatus(order, next) {
@@ -52,7 +40,6 @@ async function setStatus(order, next) {
     const updated = await api(`/admin/orders/${order.order_number}`, { method: 'PATCH', body: { status: next } })
     Object.assign(order, updated)
     api('/admin/stats').then((s) => (stats.value = s))
-    version.value++
   } catch (e) { alert(e.message) }
 }
 
@@ -95,17 +82,12 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 <template>
   <div class="page-head">
     <h1>Orders</h1>
-    <div class="row period-controls">
-      <div class="seg">
-        <button v-for="r in RANGES" :key="r" :class="{ on: days === r }" :aria-pressed="days === r" @click="days = r">{{ r }} days</button>
-      </div>
-      <button class="btn icon" title="Refresh" :disabled="loading" @click="refreshAll">
+    <div class="row">
+      <button class="btn icon" title="Refresh" :disabled="loading" @click="load">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" /></svg>
       </button>
     </div>
   </div>
-
-  <OrdersAnalytics :days="days" :version="version" />
 
   <div class="card orders-card">
     <div class="card-head orders-toolbar">
@@ -274,8 +256,6 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 .email-row .btn:disabled { background: var(--line-soft); border-color: var(--line); color: var(--muted); opacity: 1; cursor: not-allowed; }
 
 @media (max-width: 700px) {
-  .period-controls { gap: 6px; }
-  .period-controls .seg button { padding-inline: 10px; }
   .orders-toolbar { display: flex; flex-direction: column-reverse; align-items: stretch; gap: 12px; }
   .tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
   .tabs button { min-height: 44px; flex-shrink: 0; white-space: nowrap; font-size: 12px; padding-inline: 9px; }
