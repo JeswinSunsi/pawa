@@ -4,6 +4,7 @@ import { api, token, setToken } from './api'
 import OrdersView from './views/OrdersView.vue'
 import PromosView from './views/PromosView.vue'
 import BannersView from './views/BannersView.vue'
+import SalesView from './views/SalesView.vue'
 import SettingsView from './views/SettingsView.vue'
 import logo from './assets/msouq-logo.png'
 
@@ -11,6 +12,7 @@ import logo from './assets/msouq-logo.png'
 const tabs = {
   orders: { label: 'Orders', view: OrdersView, icon: 'M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0' },
   promos: { label: 'Promo codes', view: PromosView, icon: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01' },
+  sales: { label: 'Sales page', view: SalesView, icon: 'M19 5 5 19M6.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM17.5 20a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z' },
   banners: { label: 'Banners', view: BannersView, icon: 'M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6' },
   settings: { label: 'Delivery', view: SettingsView, icon: 'M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z' },
 }
