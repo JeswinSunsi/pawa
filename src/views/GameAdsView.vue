@@ -56,8 +56,7 @@ onMounted(load)
 
     <div class="card-body stack">
       <div class="notice">
-        When a game ends, the game picks one active ad at random. It pops up when the player taps Play again; tapping the image opens its link, and closing it starts the game.
-        Portrait or square images work best on phones (e.g. 1080×1350 or 1080×1080). Links starting with "/" open in the store (e.g. /sales); full https:// links open in a new tab.
+        Portrait or square images work best on phones (e.g. 1080×1350 or 1080×1080).
       </div>
 
       <div v-for="(a, i) in ads" :key="i" class="ad" :class="{ off: !a.active }">
