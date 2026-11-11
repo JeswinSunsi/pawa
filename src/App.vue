@@ -37,7 +37,6 @@ const tabs = {
     props: {
       list: 'custom', title: 'Custom row', where: 'In the custom row', titled: true,
       titlePlaceholder: 'Picked for You (used when left blank)',
-      notice: 'A side-scrolling row on the home page, under Trending Deals. The first 10 show there; its "View all" opens /custom, which lists every product here like the Sales page. The title is shown as typed in every language.',
       emptyText: 'No products. The custom row is hidden on the home page and /custom shows "No products found".',
       cutoff: { count: 10, label: 'The home page row shows the products above' },
     },
