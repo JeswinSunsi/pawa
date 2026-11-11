@@ -12,12 +12,17 @@ const props = defineProps({
   warnNoDiscount: { type: Boolean, default: false },
   // Draw a line after the first `count` products, e.g. the ones the home page also shows.
   cutoff: { type: Object, default: null },        // { count, label }
+  // The list has a heading set here (saved with the products). Blank = the store's built-in heading.
+  titled: { type: Boolean, default: false },
+  titlePlaceholder: { type: String, default: '' },
 })
 
 const MAX_PRODUCTS = 200
 const catalogue = ref([])
 const selected = ref([])
 const savedIds = ref([])
+const listTitle = ref('')
+const savedTitle = ref('')
 const loading = ref(true)
 const saving = ref(false)
 const search = ref('')
@@ -26,7 +31,8 @@ const msg = ref('')
 
 const endpoint = computed(() => '/admin/product-lists/' + props.list)
 const byId = computed(() => Object.fromEntries(catalogue.value.map((p) => [p.id, p])))
-const dirty = computed(() => selected.value.join(',') !== savedIds.value.join(','))
+const dirty = computed(() => selected.value.join(',') !== savedIds.value.join(',')
+  || (props.titled && listTitle.value.trim() !== savedTitle.value))
 
 const results = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -57,6 +63,8 @@ async function load() {
 function apply(current) {
   savedIds.value = [...current.product_ids]
   selected.value = [...current.product_ids]
+  savedTitle.value = current.title || ''
+  listTitle.value = savedTitle.value
 }
 
 function add(p) {
@@ -77,6 +85,7 @@ function move(i, d) {
 }
 function discard() {
   selected.value = [...savedIds.value]
+  listTitle.value = savedTitle.value
   picked.value = []
   msg.value = ''
 }
@@ -124,7 +133,9 @@ async function save() {
   msg.value = ''
   saving.value = true
   try {
-    apply(await api(endpoint.value, { method: 'PUT', body: { product_ids: selected.value } }))
+    const body = { product_ids: selected.value }
+    if (props.titled) body.title = listTitle.value.trim()
+    apply(await api(endpoint.value, { method: 'PUT', body }))
     msg.value = selected.value.length ? 'Saved. Live on the store now.' : 'Saved with no products.'
   } catch (e) { error.value = e.message } finally { saving.value = false }
 }
@@ -141,6 +152,9 @@ onMounted(load)
     <div class="card">
       <div class="card-head"><h3>Add products</h3></div>
       <div class="card-body stack">
+        <label v-if="titled" class="field">Title on the home page
+          <input v-model="listTitle" type="text" maxlength="80" :placeholder="titlePlaceholder" :disabled="loading" />
+        </label>
         <label class="field">Search
           <input v-model="search" type="search" maxlength="100" placeholder="Name, category or #ID"
             :disabled="loading" @keydown.enter.prevent="results[0] && add(results[0])" />

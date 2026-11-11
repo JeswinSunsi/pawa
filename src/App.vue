@@ -32,6 +32,16 @@ const tabs = {
       emptyText: 'No products. The Limited Stock section on the home page will be empty.',
     },
   },
+  custom: {
+    label: 'Custom row', view: ProductListView, icon: 'M3 6h18M3 12h18M3 18h12M19 15l3 3-3 3',
+    props: {
+      list: 'custom', title: 'Custom row', where: 'In the custom row', titled: true,
+      titlePlaceholder: 'Picked for You (used when left blank)',
+      notice: 'A side-scrolling row on the home page, under Trending Deals. The first 10 show there; its "View all" opens /custom, which lists every product here like the Sales page. The title is shown as typed in every language.',
+      emptyText: 'No products. The custom row is hidden on the home page and /custom shows "No products found".',
+      cutoff: { count: 10, label: 'The home page row shows the products above' },
+    },
+  },
   banners: { label: 'Banners', view: BannersView, icon: 'M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6' },
   gameAds: { label: 'Game ads', view: GameAdsView, icon: 'M6 11h4M8 9v4M15 12h.01M18 10h.01M17.3 5H6.7a4 4 0 0 0-4 3.6l-.7 6.1A3 3 0 0 0 5 18c1 0 1.9-.5 2.4-1.3L9 15h6l1.6 1.7c.5.8 1.4 1.3 2.4 1.3a3 3 0 0 0 3-3.3l-.7-6.1A4 4 0 0 0 17.3 5z' },
   settings: { label: 'Delivery', view: SettingsView, icon: 'M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z' },
