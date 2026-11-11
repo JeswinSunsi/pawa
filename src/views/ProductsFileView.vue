@@ -4,7 +4,7 @@ import { omr, previewUrl } from '../api'
 import ProductEditor from '../products/ProductEditor.vue'
 import {
   parseProductsFile, serialize, toFileProduct, nextId, blankProduct, checkProduct, groupSizes, groupsIndex,
-  suggestGroupKey,
+  suggestGroupKey, sharedFields, sameShared,
 } from '../products/productFile'
 
 // Edit the store's products.json in the browser: import the file, change it, download the new one.
@@ -223,9 +223,21 @@ function onSave(product, links) {
     const other = list.find((p) => p.id === id)
     if (other) other.variant_group = product.variant_group
   }
+  // Versions in a group share images, descriptions and specifications: copy this product's to the rest.
+  const key = (product.variant_group || '').trim().toLowerCase()
+  let synced = 0
+  if (key) {
+    for (const other of list) {
+      if (other.id === product.id || (other.variant_group || '').trim().toLowerCase() !== key) continue
+      if (sameShared(other, product)) continue
+      Object.assign(other, sharedFields(product))
+      synced++
+    }
+  }
   unsavedSinceDownload.value = true
   const linked = links.length ? ` and grouped with ${links.length} other product${links.length > 1 ? 's' : ''}` : ''
-  flash(`${editing.value?.isNew ? 'Added' : 'Saved'} #${product.id}${linked}.`)
+  const updated = synced ? ` Updated the shared content on ${synced} other version${synced > 1 ? 's' : ''}.` : ''
+  flash(`${editing.value?.isNew ? 'Added' : 'Saved'} #${product.id}${linked}.${updated}`)
   editing.value = null
 }
 

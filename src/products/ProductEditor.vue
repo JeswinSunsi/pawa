@@ -2,7 +2,7 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { omr, previewUrl } from '../api'
 import {
-  checkProduct, groupSizes, groupsIndex, similarProducts, suggestGroupKey, LIMITS,
+  checkProduct, groupSizes, groupsIndex, similarProducts, suggestGroupKey, sharedFields, sameShared, LIMITS,
 } from './productFile'
 
 // Side drawer to add or edit one product. Works on a copy; nothing changes until Save.
@@ -85,9 +85,50 @@ function useGroup(key) {
 }
 function groupWith(p) {
   if (p.variant_group) return useGroup(p.variant_group)
-  if (!groupKey.value) draft.value.variant_group = suggestGroupKey(p.name) || suggestGroupKey(draft.value.name)
+  if (!groupKey.value) {
+    // A new group with p: this product joins p, so it takes p's images, descriptions and specs.
+    draft.value.variant_group = suggestGroupKey(p.name) || suggestGroupKey(draft.value.name)
+    copySharedFrom(p)
+  }
+  // Otherwise p joins this product's group and takes this product's content when it's saved.
   if (!links.value.includes(p.id)) links.value.push(p.id)
 }
+
+// --- Content shared by a group: images, short description, description, specifications ---
+function draftShared() {
+  return JSON.parse(JSON.stringify({
+    image_url: draft.value.image_url, short_description: draft.value.short_description,
+    description: draft.value.description, specRows: draft.value.specRows,
+  }))
+}
+function applyShared(p) {
+  const s = sharedFields(p)
+  draft.value.image_url = s.image_url
+  draft.value.short_description = s.short_description
+  draft.value.description = s.description
+  draft.value.specRows = Object.entries(s.specs).map(([key, value]) => ({ key, value: String(value) }))
+}
+const copied = ref(null) // { from, previous }: what joining a group replaced, for Undo
+function copySharedFrom(p) {
+  const previous = copied.value?.previous ?? draftShared()
+  applyShared(p)
+  copied.value = { from: p.name, previous }
+}
+function undoCopy() {
+  Object.assign(draft.value, copied.value.previous)
+  copied.value = null
+}
+// Typing or picking the key of an existing group joins it: take that group's content.
+const startGroup = (props.product.variant_group || '').trim().toLowerCase()
+watch(groupLower, (key) => {
+  const group = groups.value.get(key)
+  if (key && group && key !== startGroup) copySharedFrom(group.products[0])
+})
+// Versions whose shared content differs from this product's (saving makes them match).
+const differing = computed(() => {
+  const mine = toProduct(draft.value)
+  return versions.value.filter((v) => !sameShared(v, mine))
+})
 function unlink(id) {
   links.value = links.value.filter((x) => x !== id)
 }
@@ -276,6 +317,19 @@ watch(() => draft.value.name, () => { showErrors.value = false })
             </li>
           </ul>
         </div>
+
+        <div v-if="copied" class="copied">
+          <span>Copied the images, descriptions and specifications from <strong>{{ copied.from }}</strong>, since versions in a group share them.</span>
+          <button class="btn sm" @click="undoCopy">Undo</button>
+        </div>
+        <div v-if="versions.length" class="shared-note small">
+          Images, short description, description and specifications are shared by all
+          {{ versions.length + 1 }} versions. Saving updates them on every version.
+          <span v-if="differing.length" class="warn-text">
+            {{ differing.length }} version{{ differing.length > 1 ? 's' : '' }} currently
+            {{ differing.length > 1 ? 'have' : 'has' }} different content and will be changed to match this one.
+          </span>
+        </div>
       </section>
 
       <!-- Price & stock -->
@@ -306,17 +360,17 @@ watch(() => draft.value.name, () => { showErrors.value = false })
             <span class="hint">Separate with commas. The first one shows on the card.</span>
           </label>
         </div>
-        <label class="field">Short description
+        <label class="field"><span>Short description <span v-if="versions.length" class="shared-tag">Shared</span></span>
           <input v-model="draft.short_description" type="text" placeholder="One line under the name" />
         </label>
-        <label class="field">Description
+        <label class="field"><span>Description <span v-if="versions.length" class="shared-tag">Shared</span></span>
           <textarea v-model="draft.description" rows="5" />
         </label>
       </section>
 
       <!-- Images -->
       <section class="stack">
-        <div class="section-title">Images <span class="count num">{{ draft.image_url.length }}</span></div>
+        <div class="section-title">Images <span class="count num">{{ draft.image_url.length }}</span> <span v-if="versions.length" class="shared-tag">Shared by the group</span></div>
         <ol v-if="draft.image_url.length" class="images">
           <li v-for="(url, i) in draft.image_url" :key="i" class="image-row">
             <img v-if="!brokenImages.has(url)" :src="previewUrl(url)" alt="" class="ithumb" loading="lazy" @error="brokenImages.add(url)" />
@@ -346,7 +400,7 @@ watch(() => draft.value.name, () => { showErrors.value = false })
 
       <!-- Specs -->
       <section class="stack">
-        <div class="section-title">Specifications <span class="count num">{{ draft.specRows.length }}</span></div>
+        <div class="section-title">Specifications <span class="count num">{{ draft.specRows.length }}</span> <span v-if="versions.length" class="shared-tag">Shared by the group</span></div>
         <div v-for="(row, i) in draft.specRows" :key="i" class="spec-row">
           <input v-model="row.key" type="text" placeholder="e.g. Battery" :aria-label="'Spec name ' + (i + 1)" />
           <input v-model="row.value" type="text" placeholder="e.g. 5000mAh" :aria-label="'Spec value ' + (i + 1)" />
@@ -419,6 +473,9 @@ textarea { width: 100%; resize: vertical; }
 .spec-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto; gap: 8px; align-items: center; }
 
 .editor-problems { display: grid; gap: 6px; }
+.copied { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; background: #ebf6f0; color: #0f5132; font-size: 13px; }
+.shared-note { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: #f9fafb; border: 1px solid var(--line); color: var(--text-2); }
+.shared-tag { font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--info); background: #eef4fc; border-radius: 6px; padding: 1px 6px; margin-left: 4px; }
 .warn-text { color: var(--warn); margin: 0; font-size: 13px; }
 
 @media (max-width: 700px) {
