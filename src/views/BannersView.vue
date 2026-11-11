@@ -15,8 +15,17 @@ const SLOTS = [
   { id: 'vr-promo', label: 'VR promo section (first image only)' },
 ]
 
+// Set `only` to edit a single slot inside another tab (no slot list or page heading),
+// e.g. the /custom page's banners on the Custom row tab.
+const props = defineProps({
+  only: { type: String, default: '' },
+  onlyLabel: { type: String, default: '' },
+  // What the store shows while the slot has no slides.
+  fallback: { type: String, default: 'the built-in images' },
+})
+
 const saved = ref({})
-const slot = ref('all')
+const slot = ref(props.only || 'all')
 const slides = ref([])
 const error = ref('')
 const msg = ref('')
@@ -51,29 +60,29 @@ async function save() {
     .map((s) => ({ image: s.image.trim(), desktopImage: s.desktopImage?.trim() || null, alt: s.alt || '', link: s.link?.trim() || null }))
   try {
     await api(`/admin/banners/${slot.value}`, { method: 'PUT', body: { slides: clean } })
-    msg.value = clean.length ? 'Saved. Live on the store now.' : 'Saved with no slides: the store shows its built-in images.'
+    msg.value = clean.length ? 'Saved. Live on the store now.' : `Saved with no slides: the store shows ${props.fallback}.`
     await load()
   } catch (e) { error.value = e.message }
 }
 async function reset() {
-  if (!confirm('Go back to the built-in banner images for this slot?')) return
+  if (!confirm(`Remove these slides and go back to ${props.fallback}?`)) return
   try {
     await api(`/admin/banners/${slot.value}`, { method: 'DELETE' })
-    msg.value = 'Reset to built-in images.'
+    msg.value = `Reset: the store shows ${props.fallback}.`
     await load()
   } catch (e) { error.value = e.message }
 }
 onMounted(load)
-const slotLabel = computed(() => SLOTS.find((s) => s.id === slot.value)?.label)
+const slotLabel = computed(() => props.onlyLabel || SLOTS.find((s) => s.id === slot.value)?.label)
 </script>
 
 <template>
-  <div class="page-head">
+  <div v-if="!only" class="page-head">
     <h1>Banners</h1>
   </div>
 
-  <div class="banners">
-    <nav class="card slots">
+  <div class="banners" :class="{ single: only }">
+    <nav v-if="!only" class="card slots">
       <button v-for="s in SLOTS" :key="s.id" class="slot" :class="{ on: slot === s.id }" @click="pick(s.id)">
         <span>{{ s.label }}</span>
         <span v-if="saved[s.id]" class="tag">Custom</span>
@@ -84,9 +93,9 @@ const slotLabel = computed(() => SLOTS.find((s) => s.id === slot.value)?.label)
       <div class="card-head">
         <div>
           <h3>{{ slotLabel }}</h3>
-          <div class="muted small" style="margin-top: 2px">{{ !loaded ? ' ' : isCustom ? 'Using your slides' : 'Using the built-in images' }}</div>
+          <div class="muted small" style="margin-top: 2px">{{ !loaded ? ' ' : isCustom ? 'Using your slides' : 'Using ' + fallback }}</div>
         </div>
-        <button v-if="isCustom" class="btn sm danger" @click="reset">Reset to built-in</button>
+        <button v-if="isCustom" class="btn sm danger" @click="reset">{{ only ? 'Clear slides' : 'Reset to built-in' }}</button>
       </div>
 
       <div class="card-body stack">
@@ -144,6 +153,7 @@ const slotLabel = computed(() => SLOTS.find((s) => s.id === slot.value)?.label)
 
 <style scoped>
 .banners { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
+.banners.single { grid-template-columns: minmax(0, 1fr); margin-top: 16px; }
 .editor { min-width: 0; margin: 0; }
 .slots { padding: 6px; display: grid; gap: 2px; margin: 0; }
 .slot {

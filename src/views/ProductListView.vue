@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { api, omr, previewUrl } from '../api'
+import BannersView from './BannersView.vue'
 
 // A curated product list stored on the backend (GET/PUT /admin/product-lists/<list>).
 const props = defineProps({
@@ -15,6 +16,8 @@ const props = defineProps({
   // The list has a heading set here (saved with the products). Blank = the store's built-in heading.
   titled: { type: Boolean, default: false },
   titlePlaceholder: { type: String, default: '' },
+  // A banner editor for one slot under the list (BannersView props), e.g. the /custom page's banners.
+  banners: { type: Object, default: null },
 })
 
 const MAX_PRODUCTS = 200
@@ -250,6 +253,8 @@ onMounted(load)
       </div>
     </div>
   </div>
+
+  <BannersView v-if="banners" v-bind="banners" />
 </template>
 
 <style scoped>

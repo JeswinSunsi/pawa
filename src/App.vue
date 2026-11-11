@@ -41,6 +41,7 @@ const tabs = {
       titlePlaceholder: 'Picked for You (used when left blank)',
       emptyText: 'No products. The custom row is hidden on the home page and /custom shows "No products found".',
       cutoff: { count: 10, label: 'The home page row shows the products above' },
+      banners: { only: 'custom', onlyLabel: 'Banners on the /custom page', fallback: 'the Home (All) banners' },
     },
   },
   banners: { label: 'Banners', view: BannersView, icon: 'M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6' },
