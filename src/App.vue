@@ -7,6 +7,7 @@ import PromosView from './views/PromosView.vue'
 import BannersView from './views/BannersView.vue'
 import GameAdsView from './views/GameAdsView.vue'
 import ProductListView from './views/ProductListView.vue'
+import ProductsFileView from './views/ProductsFileView.vue'
 import SettingsView from './views/SettingsView.vue'
 import logo from './assets/msouq-logo.png'
 
@@ -15,6 +16,7 @@ const tabs = {
   dashboard: { label: 'Dashboard', view: DashboardView, icon: 'M3 3v18h18M7 16v-4M12 16V8M17 16v-7' },
   orders: { label: 'Orders', view: OrdersView, icon: 'M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0' },
   promos: { label: 'Promo codes', view: PromosView, icon: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01' },
+  productsFile: { label: 'Products file', view: ProductsFileView, icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6' },
   sales: {
     label: 'Sales page', view: ProductListView, icon: 'M19 5 5 19M6.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM17.5 20a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
     props: {
