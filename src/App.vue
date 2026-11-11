@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { api, token, setToken } from './api'
 import DashboardView from './views/DashboardView.vue'
 import OrdersView from './views/OrdersView.vue'
@@ -49,6 +49,16 @@ const saved = localStorage.getItem('adminTab')
 const tab = ref(tabs[saved] ? saved : 'dashboard')
 watch(tab, (v) => localStorage.setItem('adminTab', v))
 
+// The sidebar is always shown on wide screens; on narrow screens it slides in from the menu button.
+const menuOpen = ref(false)
+function select(key) {
+  tab.value = key
+  menuOpen.value = false
+}
+function onKey(e) { if (e.key === 'Escape') menuOpen.value = false }
+onMounted(() => window.addEventListener('keydown', onKey))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+
 const input = ref('')
 const loginError = ref('')
 const signingIn = ref(false)
@@ -75,23 +85,37 @@ async function login() {
   </div>
 
   <div v-else class="layout">
-    <header class="topbar">
-      <div class="header-inner">
-        <div class="brand"><img :src="logo" alt="MSouq" width="123" height="36" /><span>Admin</span></div>
-        <nav class="nav" aria-label="Admin">
-          <button v-for="(t, key) in tabs" :key="key" class="nav-item" :class="{ on: tab === key }" :aria-current="tab === key ? 'page' : undefined" @click="tab = key">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="t.icon" /></svg>
-            <span>{{ t.label }}</span>
-          </button>
-        </nav>
-        <div class="account">
-          <button class="signout" @click="setToken('')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
-            Sign out
-          </button>
-        </div>
-      </div>
+    <header class="mobilebar">
+      <button class="menu-btn" aria-label="Open menu" :aria-expanded="menuOpen" aria-controls="sidebar" @click="menuOpen = true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </button>
+      <div class="brand"><img :src="logo" alt="MSouq" width="123" height="36" /><span>Admin</span></div>
+      <span class="mobilebar-title">{{ tabs[tab].label }}</span>
     </header>
+
+    <Transition name="fade"><div v-if="menuOpen" class="sidebar-backdrop" @click="menuOpen = false" /></Transition>
+
+    <aside id="sidebar" class="sidebar" :class="{ open: menuOpen }">
+      <div class="sidebar-head">
+        <div class="brand"><img :src="logo" alt="MSouq" width="123" height="36" /><span>Admin</span></div>
+        <button class="menu-btn" aria-label="Close menu" @click="menuOpen = false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <nav class="nav" aria-label="Admin">
+        <button v-for="(t, key) in tabs" :key="key" class="nav-item" :class="{ on: tab === key }" :aria-current="tab === key ? 'page' : undefined" @click="select(key)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="t.icon" /></svg>
+          <span>{{ t.label }}</span>
+        </button>
+      </nav>
+      <div class="account">
+        <button class="signout" @click="setToken('')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+          Sign out
+        </button>
+      </div>
+    </aside>
+
     <main><div class="page"><component :is="tabs[tab].view" :key="tab" v-bind="tabs[tab].props" /></div></main>
   </div>
 </template>
