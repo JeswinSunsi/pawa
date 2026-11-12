@@ -100,7 +100,7 @@ const payLabel = (o) => (o?.payment_method === 'online' ? 'Online' : 'Cash')
         <tbody>
           <tr v-for="r in requests" :key="r.id" class="click" :class="{ sel: openId === r.id }" @click="openId = r.id">
             <td class="num s-date">{{ fmtDate(r.created_at) }}<div class="muted small">{{ fmtTime(r.created_at) }}</div></td>
-            <td class="num s-order">{{ r.order_number }}<div v-if="r.order?.total != null" class="muted small">{{ omr(r.order.total) }}</div></td>
+            <td class="num s-order"><template v-if="r.order_number">{{ r.order_number }}</template><span v-else class="muted">General</span><div v-if="r.order?.total != null" class="muted small">{{ omr(r.order.total) }}</div></td>
             <td class="s-customer">{{ r.name || '—' }}<div class="muted small num">{{ r.phone || r.email }}</div></td>
             <td class="s-message"><b class="reason">{{ reasonLabel(r) }}</b><span v-if="r.message" class="message-preview muted">{{ r.message }}</span></td>
             <td class="s-status"><span class="pill" :class="'s-' + r.status">{{ r.status }}</span></td>
@@ -127,7 +127,7 @@ const payLabel = (o) => (o?.payment_method === 'online' ? 'Online' : 'Cash')
     <aside v-if="open" class="drawer">
       <div class="drawer-head">
         <div>
-          <div class="row" style="gap: 10px"><h3 class="num" style="font-size: 17px">{{ open.order_number }}</h3><span class="pill" :class="'s-' + open.status">{{ open.status }}</span></div>
+          <div class="row" style="gap: 10px"><h3 class="num" style="font-size: 17px">{{ open.order_number || 'General request' }}</h3><span class="pill" :class="'s-' + open.status">{{ open.status }}</span></div>
           <div class="muted small" style="margin-top: 4px">Received {{ fmt(open.created_at) }}</div>
         </div>
         <button class="btn icon ghost" title="Close" @click="openId = null">
