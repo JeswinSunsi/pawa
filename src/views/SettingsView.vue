@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { api } from '../api'
 
-const form = ref({ free_delivery_min_spend: 0, delivery_fee: 0 })
+const form = ref({ free_delivery_min_spend: 0, delivery_fee: 0, free_gift_min_spend: 0 })
 const msg = ref('')
 const error = ref('')
 const loaded = ref(false)
@@ -15,7 +15,11 @@ async function save() {
   try {
     form.value = await api('/admin/settings', {
       method: 'PUT',
-      body: { free_delivery_min_spend: Number(form.value.free_delivery_min_spend), delivery_fee: Number(form.value.delivery_fee) },
+      body: {
+        free_delivery_min_spend: Number(form.value.free_delivery_min_spend),
+        delivery_fee: Number(form.value.delivery_fee),
+        free_gift_min_spend: Number(form.value.free_gift_min_spend),
+      },
     })
     msg.value = 'Saved. The store uses the new values right away.'
   } catch (e) { error.value = e.message }
@@ -38,6 +42,10 @@ async function save() {
       <label class="field">Delivery fee
         <div class="affix"><input v-model="form.delivery_fee" type="number" step="0.001" min="0" required /><span>OMR</span></div>
         <span class="hint">Charged on orders below the free delivery amount.</span>
+      </label>
+      <label class="field">Free gift from
+        <div class="affix"><input v-model="form.free_gift_min_spend" type="number" step="0.001" min="0" required /><span>OMR</span></div>
+        <span class="hint">Products priced at or above this amount come with a free gift.</span>
       </label>
       <p v-if="msg" class="success" style="margin: 0">{{ msg }}</p>
       <p v-if="error" class="error" style="margin: 0">{{ error }}</p>
