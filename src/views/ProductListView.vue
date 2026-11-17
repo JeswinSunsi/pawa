@@ -16,6 +16,7 @@ const props = defineProps({
   // The list has a heading set here (saved with the products). Blank = the store's built-in heading.
   titled: { type: Boolean, default: false },
   titlePlaceholder: { type: String, default: '' },
+  titlePlaceholderAr: { type: String, default: '' },
   // A banner editor for one slot under the list (BannersView props), e.g. the /custom page's banners.
   banners: { type: Object, default: null },
 })
@@ -26,6 +27,8 @@ const selected = ref([])
 const savedIds = ref([])
 const listTitle = ref('')
 const savedTitle = ref('')
+const listTitleAr = ref('')
+const savedTitleAr = ref('')
 const loading = ref(true)
 const saving = ref(false)
 const search = ref('')
@@ -35,7 +38,7 @@ const msg = ref('')
 const endpoint = computed(() => '/admin/product-lists/' + props.list)
 const byId = computed(() => Object.fromEntries(catalogue.value.map((p) => [p.id, p])))
 const dirty = computed(() => selected.value.join(',') !== savedIds.value.join(',')
-  || (props.titled && listTitle.value.trim() !== savedTitle.value))
+  || (props.titled && (listTitle.value.trim() !== savedTitle.value || listTitleAr.value.trim() !== savedTitleAr.value)))
 
 const results = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -68,6 +71,8 @@ function apply(current) {
   selected.value = [...current.product_ids]
   savedTitle.value = current.title || ''
   listTitle.value = savedTitle.value
+  savedTitleAr.value = current.title_ar || ''
+  listTitleAr.value = savedTitleAr.value
 }
 
 function add(p) {
@@ -89,6 +94,7 @@ function move(i, d) {
 function discard() {
   selected.value = [...savedIds.value]
   listTitle.value = savedTitle.value
+  listTitleAr.value = savedTitleAr.value
   picked.value = []
   msg.value = ''
 }
@@ -137,7 +143,10 @@ async function save() {
   saving.value = true
   try {
     const body = { product_ids: selected.value }
-    if (props.titled) body.title = listTitle.value.trim()
+    if (props.titled) {
+      body.title = listTitle.value.trim()
+      body.title_ar = listTitleAr.value.trim()
+    }
     apply(await api(endpoint.value, { method: 'PUT', body }))
     msg.value = selected.value.length ? 'Saved. Live on the store now.' : 'Saved with no products.'
   } catch (e) { error.value = e.message } finally { saving.value = false }
@@ -155,9 +164,15 @@ onMounted(load)
     <div class="card">
       <div class="card-head"><h3>Add products</h3></div>
       <div class="card-body stack">
-        <label v-if="titled" class="field">Title on the home page
-          <input v-model="listTitle" type="text" maxlength="80" :placeholder="titlePlaceholder" :disabled="loading" />
-        </label>
+        <template v-if="titled">
+          <label class="field">Title on the home page (English)
+            <input v-model="listTitle" type="text" maxlength="80" :placeholder="titlePlaceholder" :disabled="loading" />
+          </label>
+          <label class="field">Title on the home page (Arabic)
+            <input v-model="listTitleAr" type="text" maxlength="80" dir="rtl" lang="ar"
+              :placeholder="titlePlaceholderAr" :disabled="loading" />
+          </label>
+        </template>
         <label class="field">Search
           <input v-model="search" type="search" maxlength="100" placeholder="Name, category or #ID"
             :disabled="loading" @keydown.enter.prevent="results[0] && add(results[0])" />

@@ -223,7 +223,7 @@ function onSave(product, links) {
     const other = list.find((p) => p.id === id)
     if (other) other.variant_group = product.variant_group
   }
-  // Versions in a group share images, descriptions and specifications: copy this product's to the rest.
+  // Versions in a group share images, descriptions, specifications and max per order: copy this product's to the rest.
   const key = (product.variant_group || '').trim().toLowerCase()
   let synced = 0
   if (key) {
@@ -413,6 +413,7 @@ function problemText(p) {
               <div class="num price">{{ omr(p.price) }}</div>
               <div v-if="p.original_price != null && p.original_price > p.price" class="num small muted was">{{ omr(p.original_price) }}</div>
               <span v-if="p.availability === false" class="tag out">Out of stock</span>
+              <span v-if="p.max_quantity" class="tag limit" :title="'At most ' + p.max_quantity + ' per order'">Max {{ p.max_quantity }}</span>
             </div>
             <span v-if="problems.get(p)" class="problem" :class="{ bad: problems.get(p).errors.length }" :title="problemText(p)" aria-label="Has problems">!</span>
             <div class="row-actions" @click.stop>
@@ -474,6 +475,7 @@ function problemText(p) {
 .tag.added { background: #ebf6f0; color: var(--ok); }
 .tag.deleted { background: #fcefef; color: var(--danger); }
 .tag.out { background: #fdf5e7; color: var(--warn); }
+.tag.limit { background: #eef4fc; color: var(--info); }
 .warn-text { color: var(--warn); font-weight: 500; }
 
 .filters { gap: 10px; justify-content: flex-start; }

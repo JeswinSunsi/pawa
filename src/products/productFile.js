@@ -3,9 +3,11 @@
 
 // Field order written to the file; any other fields a product has are kept after these.
 const FIELD_ORDER = ['id', 'name', 'price', 'original_price', 'short_description', 'description',
-  'image_url', 'category', 'specs', 'color', 'variant_group', 'badges', 'availability']
+  'image_url', 'category', 'specs', 'color', 'variant_group', 'badges', 'availability', 'max_quantity']
 
-export const LIMITS = { color: 50, variantGroup: 100 }
+// maxQuantity: the store-wide per-order limit (MAX_QUANTITY_PER_PRODUCT in porodo/main.py);
+// a product's own max_quantity must be 1 up to this.
+export const LIMITS = { color: 50, variantGroup: 100, maxQuantity: 10 }
 
 /** Parses a products.json text into a list of products, or throws a readable error. */
 export function parseProductsFile(text) {
@@ -42,6 +44,8 @@ export function toFileProduct(p) {
     price: p.price === '' || p.price == null ? p.price : Number(p.price),
     // Only out-of-stock products carry the flag; missing means in stock.
     availability: p.availability === false ? false : undefined,
+    // Only limited products carry it (e.g. 1 or 2 per order); missing means the store-wide limit.
+    max_quantity: p.max_quantity === '' || p.max_quantity == null ? undefined : Number(p.max_quantity),
   }
   // Keep the product's own field order (so untouched products are written back unchanged);
   // fields it didn't have go where FIELD_ORDER puts them.
@@ -65,7 +69,8 @@ export function serialize(products) {
 }
 
 // Every version in a group shares these: joining a group copies them, and saving one version updates the rest.
-export const SHARED_FIELDS = ['image_url', 'short_description', 'description', 'specs']
+// max_quantity too: a per-order limit on one version applies to all of them.
+export const SHARED_FIELDS = ['image_url', 'short_description', 'description', 'specs', 'max_quantity']
 
 /** A copy of the fields a product shares with the rest of its group. */
 export function sharedFields(p) {
@@ -74,6 +79,7 @@ export function sharedFields(p) {
     short_description: p.short_description ?? '',
     description: p.description ?? '',
     specs: { ...(p.specs || {}) },
+    max_quantity: p.max_quantity === '' || p.max_quantity == null ? null : Number(p.max_quantity),
   }
 }
 
@@ -111,6 +117,12 @@ export function checkProduct(p, groupSizes = {}) {
     else if (!Number.isNaN(price) && original <= price) warnings.push('Original price isn’t above the price, so no discount is shown.')
   }
   if (!(p.image_url || []).some((u) => u.trim())) errors.push('Add at least one image.')
+  if (p.max_quantity !== '' && p.max_quantity != null) {
+    const max = Number(p.max_quantity)
+    if (!Number.isInteger(max) || max < 1 || max > LIMITS.maxQuantity) {
+      errors.push(`Max per order must be a whole number from 1 to ${LIMITS.maxQuantity}.`)
+    }
+  }
   if ((p.color || '').trim().length > LIMITS.color) errors.push(`Color can be at most ${LIMITS.color} characters.`)
   const group = (p.variant_group || '').trim()
   if (group.length > LIMITS.variantGroup) errors.push(`Group key can be at most ${LIMITS.variantGroup} characters.`)

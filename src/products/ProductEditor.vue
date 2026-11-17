@@ -34,6 +34,7 @@ function fromProduct(p) {
     badgesText: (p.badges || []).join(', '),
     specRows: Object.entries(p.specs || {}).map(([key, value]) => ({ key, value: String(value) })),
     inStock: p.availability !== false,
+    max_quantity: p.max_quantity ?? '',
   }
 }
 
@@ -51,6 +52,7 @@ function toProduct(d) {
     badges: badgesText.split(',').map((b) => b.trim()).filter(Boolean),
     specs,
     availability: inStock ? undefined : false,
+    max_quantity: rest.max_quantity === '' || rest.max_quantity == null ? undefined : Number(rest.max_quantity),
   }
 }
 
@@ -94,11 +96,11 @@ function groupWith(p) {
   if (!links.value.includes(p.id)) links.value.push(p.id)
 }
 
-// --- Content shared by a group: images, short description, description, specifications ---
+// --- Content shared by a group: images, short description, description, specifications, max per order ---
 function draftShared() {
   return JSON.parse(JSON.stringify({
     image_url: draft.value.image_url, short_description: draft.value.short_description,
-    description: draft.value.description, specRows: draft.value.specRows,
+    description: draft.value.description, specRows: draft.value.specRows, max_quantity: draft.value.max_quantity,
   }))
 }
 function applyShared(p) {
@@ -107,6 +109,7 @@ function applyShared(p) {
   draft.value.short_description = s.short_description
   draft.value.description = s.description
   draft.value.specRows = Object.entries(s.specs).map(([key, value]) => ({ key, value: String(value) }))
+  draft.value.max_quantity = s.max_quantity ?? ''
 }
 const copied = ref(null) // { from, previous }: what joining a group replaced, for Undo
 function copySharedFrom(p) {
@@ -319,7 +322,7 @@ watch(() => draft.value.name, () => { showErrors.value = false })
         </div>
 
         <div v-if="copied" class="copied">
-          <span>Copied the images, descriptions and specifications from <strong>{{ copied.from }}</strong>, since versions in a group share them.</span>
+          <span>Copied the images, descriptions, specifications and max per order from <strong>{{ copied.from }}</strong>, since versions in a group share them.</span>
           <button class="btn sm" @click="undoCopy">Undo</button>
         </div>
         <div v-if="versions.length" class="shared-note small">
@@ -346,6 +349,11 @@ watch(() => draft.value.name, () => { showErrors.value = false })
         </div>
         <label class="check"><input v-model="draft.inStock" type="checkbox" /> In stock</label>
         <span v-if="!draft.inStock" class="muted small">The product page shows “Out of stock” and a Notify me button instead of Add to cart.</span>
+        <label class="field"><span>Max per order <span v-if="versions.length" class="shared-tag">Shared</span></span>
+          <input v-model="draft.max_quantity" type="number" min="1" :max="LIMITS.maxQuantity" step="1" inputmode="numeric"
+            :placeholder="`Optional (store limit is ${LIMITS.maxQuantity})`" />
+          <span class="hint">Leave empty for the usual limit. Set 1 or 2 for items customers may only buy a few of.<template v-if="versions.length"> Applies to every version in the group.</template></span>
+        </label>
       </section>
 
       <!-- Details -->

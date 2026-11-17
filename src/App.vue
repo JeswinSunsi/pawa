@@ -41,6 +41,7 @@ const tabs = {
     props: {
       list: 'custom', title: 'Custom row', where: 'In the custom row', titled: true,
       titlePlaceholder: 'Picked for You (used when left blank)',
+      titlePlaceholderAr: 'مختارات لك',
       emptyText: 'No products. The custom row is hidden on the home page and /custom shows "No products found".',
       cutoff: { count: 10, label: 'The home page row shows the products above' },
       banners: { only: 'custom', onlyLabel: 'Banners on the /custom page', fallback: 'an empty black banner' },
