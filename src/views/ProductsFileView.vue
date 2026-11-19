@@ -4,7 +4,7 @@ import { omr, previewUrl } from '../api'
 import ProductEditor from '../products/ProductEditor.vue'
 import {
   parseProductsFile, serialize, toFileProduct, nextId, blankProduct, checkProduct, groupSizes, groupsIndex,
-  suggestGroupKey, sharedFields, sameShared,
+  suggestGroupKey, sharedFields, sameShared, isMarked,
 } from '../products/productFile'
 
 // Edit the store's products.json in the browser: import the file, change it, download the new one.
@@ -162,6 +162,7 @@ const FILTERS = computed(() => [
   { key: 'grouped', label: 'In a group' },
   { key: 'single', label: 'No group' },
   { key: 'out', label: 'Out of stock' },
+  { key: 'marked', label: 'Marked', count: products.value.filter(isMarked).length },
   { key: 'problems', label: 'Problems', count: errorCount.value + warningCount.value },
 ])
 
@@ -175,6 +176,7 @@ const visible = computed(() => {
       case 'grouped': if (!p.variant_group) return false; break
       case 'single': if (p.variant_group) return false; break
       case 'out': if (p.availability !== false) return false; break
+      case 'marked': if (!isMarked(p)) return false; break
       case 'problems': if (!problems.value.has(p)) return false; break
     }
     if (!words.length) return true
@@ -223,7 +225,7 @@ function onSave(product, links) {
     const other = list.find((p) => p.id === id)
     if (other) other.variant_group = product.variant_group
   }
-  // Versions in a group share images, descriptions, specifications and max per order: copy this product's to the rest.
+  // Versions in a group share images, descriptions, specifications, max per order and marker: copy this product's to the rest.
   const key = (product.variant_group || '').trim().toLowerCase()
   let synced = 0
   if (key) {
@@ -413,6 +415,7 @@ function problemText(p) {
               <div class="num price">{{ omr(p.price) }}</div>
               <div v-if="p.original_price != null && p.original_price > p.price" class="num small muted was">{{ omr(p.original_price) }}</div>
               <span v-if="p.availability === false" class="tag out">Out of stock</span>
+              <span v-if="isMarked(p)" class="tag marked" title="Marked (internal)">Marked</span>
               <span v-if="p.max_quantity" class="tag limit" :title="'At most ' + p.max_quantity + ' per order'">Max {{ p.max_quantity }}</span>
             </div>
             <span v-if="problems.get(p)" class="problem" :class="{ bad: problems.get(p).errors.length }" :title="problemText(p)" aria-label="Has problems">!</span>
@@ -476,6 +479,7 @@ function problemText(p) {
 .tag.deleted { background: #fcefef; color: var(--danger); }
 .tag.out { background: #fdf5e7; color: var(--warn); }
 .tag.limit { background: #eef4fc; color: var(--info); }
+.tag.marked { background: #f4ebfc; color: #6b2fa3; }
 .warn-text { color: var(--warn); font-weight: 500; }
 
 .filters { gap: 10px; justify-content: flex-start; }

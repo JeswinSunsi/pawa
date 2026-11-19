@@ -2,7 +2,7 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { omr, previewUrl } from '../api'
 import {
-  checkProduct, groupSizes, groupsIndex, similarProducts, suggestGroupKey, sharedFields, sameShared, LIMITS,
+  checkProduct, groupSizes, groupsIndex, similarProducts, suggestGroupKey, sharedFields, sameShared, LIMITS, isMarked,
 } from './productFile'
 
 // Side drawer to add or edit one product. Works on a copy; nothing changes until Save.
@@ -35,11 +35,12 @@ function fromProduct(p) {
     specRows: Object.entries(p.specs || {}).map(([key, value]) => ({ key, value: String(value) })),
     inStock: p.availability !== false,
     max_quantity: p.max_quantity ?? '',
+    marked: isMarked(p),
   }
 }
 
 function toProduct(d) {
-  const { badgesText, specRows, inStock, ...rest } = d
+  const { badgesText, specRows, inStock, marked, ...rest } = d
   const specs = {}
   for (const row of specRows) if (row.key.trim()) specs[row.key.trim()] = row.value
   return {
@@ -53,6 +54,7 @@ function toProduct(d) {
     specs,
     availability: inStock ? undefined : false,
     max_quantity: rest.max_quantity === '' || rest.max_quantity == null ? undefined : Number(rest.max_quantity),
+    marker: marked ? 1 : undefined,
   }
 }
 
@@ -96,11 +98,12 @@ function groupWith(p) {
   if (!links.value.includes(p.id)) links.value.push(p.id)
 }
 
-// --- Content shared by a group: images, short description, description, specifications, max per order ---
+// --- Content shared by a group: images, short description, description, specifications, max per order, marker ---
 function draftShared() {
   return JSON.parse(JSON.stringify({
     image_url: draft.value.image_url, short_description: draft.value.short_description,
     description: draft.value.description, specRows: draft.value.specRows, max_quantity: draft.value.max_quantity,
+    marked: draft.value.marked,
   }))
 }
 function applyShared(p) {
@@ -110,6 +113,7 @@ function applyShared(p) {
   draft.value.description = s.description
   draft.value.specRows = Object.entries(s.specs).map(([key, value]) => ({ key, value: String(value) }))
   draft.value.max_quantity = s.max_quantity ?? ''
+  draft.value.marked = s.marker === 1
 }
 const copied = ref(null) // { from, previous }: what joining a group replaced, for Undo
 function copySharedFrom(p) {
@@ -322,7 +326,7 @@ watch(() => draft.value.name, () => { showErrors.value = false })
         </div>
 
         <div v-if="copied" class="copied">
-          <span>Copied the images, descriptions, specifications and max per order from <strong>{{ copied.from }}</strong>, since versions in a group share them.</span>
+          <span>Copied the images, descriptions, specifications, max per order and mark from <strong>{{ copied.from }}</strong>, since versions in a group share them.</span>
           <button class="btn sm" @click="undoCopy">Undo</button>
         </div>
         <div v-if="versions.length" class="shared-note small">
@@ -349,6 +353,8 @@ watch(() => draft.value.name, () => { showErrors.value = false })
         </div>
         <label class="check"><input v-model="draft.inStock" type="checkbox" /> In stock</label>
         <span v-if="!draft.inStock" class="muted small">The product page shows “Out of stock” and a Notify me button instead of Add to cart.</span>
+        <label class="check"><input v-model="draft.marked" type="checkbox" /> Marked <span v-if="versions.length" class="shared-tag">Shared</span></label>
+        <span class="muted small">Internal only, customers never see it. Use it to find products again later in the Marked filter, e.g. a price lowered for one day that has to be put back.<template v-if="versions.length"> Applies to every version in the group.</template></span>
         <label class="field"><span>Max per order <span v-if="versions.length" class="shared-tag">Shared</span></span>
           <input v-model="draft.max_quantity" type="number" min="1" :max="LIMITS.maxQuantity" step="1" inputmode="numeric"
             :placeholder="`Optional (store limit is ${LIMITS.maxQuantity})`" />

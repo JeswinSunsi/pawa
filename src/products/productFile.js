@@ -3,7 +3,7 @@
 
 // Field order written to the file; any other fields a product has are kept after these.
 const FIELD_ORDER = ['id', 'name', 'price', 'original_price', 'short_description', 'description',
-  'image_url', 'category', 'specs', 'color', 'variant_group', 'badges', 'availability', 'max_quantity']
+  'image_url', 'category', 'specs', 'color', 'variant_group', 'badges', 'availability', 'max_quantity', 'marker']
 
 // maxQuantity: the store-wide per-order limit (MAX_QUANTITY_PER_PRODUCT in porodo/main.py);
 // a product's own max_quantity must be 1 up to this.
@@ -46,6 +46,8 @@ export function toFileProduct(p) {
     availability: p.availability === false ? false : undefined,
     // Only limited products carry it (e.g. 1 or 2 per order); missing means the store-wide limit.
     max_quantity: p.max_quantity === '' || p.max_quantity == null ? undefined : Number(p.max_quantity),
+    // Internal flag (not shown in the store): only marked products carry it, as 1.
+    marker: isMarked(p) ? 1 : undefined,
   }
   // Keep the product's own field order (so untouched products are written back unchanged);
   // fields it didn't have go where FIELD_ORDER puts them.
@@ -69,8 +71,8 @@ export function serialize(products) {
 }
 
 // Every version in a group shares these: joining a group copies them, and saving one version updates the rest.
-// max_quantity too: a per-order limit on one version applies to all of them.
-export const SHARED_FIELDS = ['image_url', 'short_description', 'description', 'specs', 'max_quantity']
+// max_quantity and marker too: a per-order limit or a mark on one version applies to all of them.
+export const SHARED_FIELDS = ['image_url', 'short_description', 'description', 'specs', 'max_quantity', 'marker']
 
 /** A copy of the fields a product shares with the rest of its group. */
 export function sharedFields(p) {
@@ -80,10 +82,14 @@ export function sharedFields(p) {
     description: p.description ?? '',
     specs: { ...(p.specs || {}) },
     max_quantity: p.max_quantity === '' || p.max_quantity == null ? null : Number(p.max_quantity),
+    marker: isMarked(p) ? 1 : null,
   }
 }
 
 export const sameShared = (a, b) => JSON.stringify(sharedFields(a)) === JSON.stringify(sharedFields(b))
+
+/** Marked for follow-up in the admin (e.g. a one-day price to put back); `"marker": 1` in the file. */
+export const isMarked = (p) => Number(p.marker) === 1
 
 export function nextId(products) {
   return products.reduce((max, p) => Math.max(max, Number.isInteger(p.id) ? p.id : -1), -1) + 1

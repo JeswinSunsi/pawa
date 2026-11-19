@@ -4,6 +4,7 @@ import { api, token, setToken } from './api'
 import DashboardView from './views/DashboardView.vue'
 import OrdersView from './views/OrdersView.vue'
 import SupportView from './views/SupportView.vue'
+import StockRequestsView from './views/StockRequestsView.vue'
 import PromosView from './views/PromosView.vue'
 import BannersView from './views/BannersView.vue'
 import GameAdsView from './views/GameAdsView.vue'
@@ -17,6 +18,7 @@ const tabs = {
   dashboard: { label: 'Dashboard', view: DashboardView, icon: 'M3 3v18h18M7 16v-4M12 16V8M17 16v-7' },
   orders: { label: 'Orders', view: OrdersView, icon: 'M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0' },
   support: { label: 'Support', view: SupportView, icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+  stockRequests: { label: 'Notify me', view: StockRequestsView, icon: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0' },
   promos: { label: 'Promo codes', view: PromosView, icon: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01' },
   productsFile: { label: 'Products file', view: ProductsFileView, icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6' },
   sales: {
