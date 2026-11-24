@@ -4,7 +4,7 @@ import { omr, previewUrl } from '../api'
 import ProductEditor from '../products/ProductEditor.vue'
 import {
   parseProductsFile, serialize, toFileProduct, nextId, blankProduct, checkProduct, groupSizes, groupsIndex,
-  suggestGroupKey, sharedFields, sameShared, isMarked,
+  suggestGroupKey, sharedFields, sameShared, isMarked, brandSpellings, barcodeIndex, brandList,
 } from '../products/productFile'
 
 // Edit the store's products.json in the browser: import the file, change it, download the new one.
@@ -127,11 +127,13 @@ const anyChange = computed(() => counts.value.added + counts.value.edited + coun
 // --- Problems ---
 const problems = computed(() => {
   const sizes = groupSizes(products.value)
+  const brands = brandSpellings(products.value)
+  const barcodes = barcodeIndex(products.value)
   const idCount = new Map()
   for (const p of products.value) idCount.set(p.id, (idCount.get(p.id) || 0) + 1)
   const out = new Map()
   for (const p of products.value) {
-    const r = checkProduct(p, sizes)
+    const r = checkProduct(p, sizes, brands, barcodes)
     if (idCount.get(p.id) > 1) r.errors.unshift(`ID #${p.id} is used by more than one product.`)
     if (r.errors.length || r.warnings.length) out.set(p, r)
   }
@@ -144,18 +146,22 @@ const warningCount = computed(() => [...problems.value.values()].filter((r) => !
 const search = ref('')
 const filter = ref('all')
 const category = ref('')
+const brand = ref('') // a brand, or NO_BRAND
+const NO_BRAND = '__no_brand__'
 const sort = ref('file')
 const shown = ref(PAGE)
 function resetView() {
   search.value = ''
   filter.value = 'all'
   category.value = ''
+  brand.value = ''
   shown.value = PAGE
 }
-watch([search, filter, category, sort], () => { shown.value = PAGE })
+watch([search, filter, category, brand, sort], () => { shown.value = PAGE })
 
 const groups = computed(() => groupsIndex(products.value))
 const categories = computed(() => [...new Set(products.value.map((p) => p.category).filter(Boolean))].sort())
+const brands = computed(() => brandList(products.value))
 const FILTERS = computed(() => [
   { key: 'all', label: 'All', count: products.value.length },
   { key: 'changed', label: 'Changed', count: counts.value.added + counts.value.edited },
@@ -171,6 +177,7 @@ const visible = computed(() => {
   const words = q.split(/\s+/).filter(Boolean)
   let list = products.value.filter((p) => {
     if (category.value && p.category !== category.value) return false
+    if (brand.value === NO_BRAND ? (p.brand || '').trim() : brand.value && (p.brand || '').trim().toLowerCase() !== brand.value.toLowerCase()) return false
     switch (filter.value) {
       case 'changed': if (!statusOf.value.has(p.id)) return false; break
       case 'grouped': if (!p.variant_group) return false; break
@@ -181,7 +188,8 @@ const visible = computed(() => {
     }
     if (!words.length) return true
     if (q === String(p.id) || q === '#' + p.id) return true
-    const hay = `${p.name} ${p.category || ''} ${p.color || ''} ${p.variant_group || ''}`.toLowerCase()
+    if (typeof p.barcode === 'string' && p.barcode.trim() === q) return true
+    const hay = `${p.name} ${p.brand || ''} ${p.category || ''} ${p.color || ''} ${p.variant_group || ''}`.toLowerCase()
     return words.every((w) => hay.includes(w))
   })
   if (sort.value === 'name') list = [...list].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
@@ -194,6 +202,7 @@ function showGroup(key) {
   search.value = key
   filter.value = 'all'
   category.value = ''
+  brand.value = ''
 }
 
 // --- Edit / add / delete ---
@@ -211,6 +220,7 @@ function addVersionOf(source) {
     variant_group: key,
   }
   delete copy.availability
+  delete copy.barcode // each version has its own Odoo barcode
   editing.value = null
   // Open on the next tick so the drawer remounts with the copy.
   setTimeout(() => { editing.value = { product: copy, isNew: true, links: source.variant_group ? [] : [source.id] } })
@@ -374,11 +384,16 @@ function problemText(p) {
       <div class="card-head filters">
         <div class="search grow">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input v-model="search" type="search" placeholder="Search name, #ID, color or group key" />
+          <input v-model="search" type="search" placeholder="Search name, brand, #ID, barcode, color or group key" />
         </div>
         <select v-model="category" aria-label="Category">
           <option value="">All categories</option>
           <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
+        </select>
+        <select v-model="brand" aria-label="Brand">
+          <option value="">All brands</option>
+          <option v-for="b in brands" :key="b" :value="b">{{ b }}</option>
+          <option :value="NO_BRAND">No brand</option>
         </select>
         <select v-model="sort" aria-label="Sort">
           <option value="file">File order</option>

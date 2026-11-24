@@ -2,17 +2,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { api, previewUrl } from '../api'
 
-// Slots match the storefront: home category slugs (porodo/frontend/src/constants/homeCategories.js) + the VR promo image.
+// Slots match the storefront's home category slugs (porodo/frontend/src/constants/homeCategories.js), in the same order.
 const SLOTS = [
   { id: 'all', label: 'Home (All)' },
   { id: 'phones', label: 'Phones' },
+  { id: 'tablets', label: 'Tablets' },
   { id: 'power-banks', label: 'Power banks' },
   { id: 'wearables', label: 'Wearables' },
   { id: 'speakers', label: 'Speakers' },
   { id: 'earbuds', label: 'Earbuds' },
   { id: 'gaming', label: 'Gaming' },
   { id: 'chargers', label: 'Chargers' },
-  { id: 'vr-promo', label: 'VR promo section (first image only)' },
 ]
 
 // Set `only` to edit a single slot inside another tab (no slot list or page heading),
@@ -181,7 +181,6 @@ const slotLabel = computed(() => props.onlyLabel || SLOTS.find((s) => s.id === s
   .banners { grid-template-columns: minmax(0, 1fr); }
   .slots { grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr)); }
   .slot { min-height: 44px; flex-wrap: wrap; justify-content: flex-start; gap: 2px 8px; }
-  .slot:last-child { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
   .slide { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 12px; align-items: center; }

@@ -2,12 +2,12 @@
 // The rules mirror the store backend (porodo/main.py, Product), so a file that passes here loads there.
 
 // Field order written to the file; any other fields a product has are kept after these.
-const FIELD_ORDER = ['id', 'name', 'price', 'original_price', 'short_description', 'description',
-  'image_url', 'category', 'specs', 'color', 'variant_group', 'badges', 'availability', 'max_quantity', 'marker']
+const FIELD_ORDER = ['id', 'name', 'brand', 'price', 'original_price', 'short_description', 'description',
+  'image_url', 'category', 'specs', 'color', 'variant_group', 'barcode', 'badges', 'availability', 'max_quantity', 'marker']
 
 // maxQuantity: the store-wide per-order limit (MAX_QUANTITY_PER_PRODUCT in porodo/main.py);
 // a product's own max_quantity must be 1 up to this.
-export const LIMITS = { color: 50, variantGroup: 100, maxQuantity: 10 }
+export const LIMITS = { brand: 50, color: 50, variantGroup: 100, barcode: 64, maxQuantity: 10 }
 
 /** Parses a products.json text into a list of products, or throws a readable error. */
 export function parseProductsFile(text) {
@@ -32,15 +32,21 @@ export function toFileProduct(p) {
   const clean = {
     ...p,
     name: (p.name || '').trim(),
+    // Every product carries the key; null only for a product that genuinely has no brand.
+    brand: typeof p.brand === 'string' ? p.brand.trim() || null : p.brand ?? null,
     short_description: p.short_description ?? null,
     description: p.description ?? null,
     category: p.category?.trim() || null,
     color: p.color?.trim() || undefined,
     variant_group: p.variant_group?.trim() || undefined,
+    // The Odoo variant barcode, always as a string (a number would lose leading zeros); only products that have one carry it.
+    // A number from a hand-edited file is kept as it is, so checkProduct reports it.
+    barcode: typeof p.barcode === 'string' ? p.barcode.trim() || undefined : p.barcode ?? undefined,
     image_url: (p.image_url || []).map((u) => u.trim()).filter(Boolean),
+    // Like the store's file: only products with tags carry badges, and only discounted ones original_price.
     badges: (p.badges || []).map((b) => b.trim()).filter(Boolean),
     specs: p.specs && typeof p.specs === 'object' ? p.specs : null,
-    original_price: p.original_price === '' || p.original_price == null ? null : Number(p.original_price),
+    original_price: p.original_price === '' || p.original_price == null ? undefined : Number(p.original_price),
     price: p.price === '' || p.price == null ? p.price : Number(p.price),
     // Only out-of-stock products carry the flag; missing means in stock.
     availability: p.availability === false ? false : undefined,
@@ -57,17 +63,14 @@ export function toFileProduct(p) {
     const before = FIELD_ORDER.slice(0, FIELD_ORDER.indexOf(key)).reverse().find((k) => order.includes(k))
     order.splice(before ? order.indexOf(before) + 1 : 0, 0, key)
   }
+  if (!clean.badges.length) clean.badges = undefined
   for (const key of order) if (clean[key] !== undefined) out[key] = clean[key]
   return out
 }
 
-/**
- * The file text: 2-space indents like the existing products.json, and prices always with a
- * decimal point (10.0, not 10), as the file is written by Python, so unchanged prices don't show as edits.
- */
+/** The file text: 2-space indents like the store's products.json, whole prices without a decimal point (10, not 10.0). */
 export function serialize(products) {
   return JSON.stringify(products.map(toFileProduct), null, 2)
-    .replace(/^(\s*"(?:price|original_price)": -?\d+)(,?)$/gm, '$1.0$2')
 }
 
 // Every version in a group shares these: joining a group copies them, and saving one version updates the rest.
@@ -97,8 +100,8 @@ export function nextId(products) {
 
 export function blankProduct(id) {
   return {
-    id, name: '', price: '', original_price: null, short_description: '', description: '',
-    image_url: [], category: '', specs: {}, color: '', variant_group: '', badges: [],
+    id, name: '', brand: '', price: '', original_price: null, short_description: '', description: '',
+    image_url: [], category: '', specs: {}, color: '', variant_group: '', barcode: '', badges: [],
   }
 }
 
@@ -107,12 +110,25 @@ const decimals = (n) => (String(n).split('.')[1] || '').length
 /**
  * Problems with one product. `errors` stop the store from starting; `warnings` don't.
  * `groupSizes` maps a lower-cased group key to how many products use it.
+ * `brands` (from brandSpellings) maps a lower-cased brand to how the catalogue spells it.
+ * `barcodes` (from barcodeIndex) maps a barcode to the IDs of the products that use it.
  */
-export function checkProduct(p, groupSizes = {}) {
+export function checkProduct(p, groupSizes = {}, brands = {}, barcodes = {}) {
   const errors = []
   const warnings = []
   if (!Number.isInteger(p.id) || p.id < 0) errors.push('ID must be a whole number, 0 or more.')
-  if (!(p.name || '').trim()) errors.push('Name is required.')
+  const name = (p.name || '').trim()
+  if (!name) errors.push('Name is required.')
+  if (p.brand != null && typeof p.brand !== 'string') errors.push('Brand must be text.')
+  else {
+    const brand = (p.brand || '').trim()
+    if (brand.length > LIMITS.brand) errors.push(`Brand can be at most ${LIMITS.brand} characters.`)
+    else if (brand) {
+      if (name && name !== brand && !name.startsWith(brand + ' ')) warnings.push(`The name should start with the brand (“${brand} …”).`)
+      const spelling = brands[brand.toLowerCase()]
+      if (spelling && spelling !== brand) warnings.push(`Brand is spelled “${spelling}” elsewhere in the catalogue.`)
+    }
+  }
   const price = p.price === '' || p.price == null ? NaN : Number(p.price)
   if (Number.isNaN(price) || price < 0) errors.push('Price is required and can’t be negative.')
   else if (decimals(p.price) > 3) errors.push('Price can have at most 3 decimals (baisa).')
@@ -133,6 +149,14 @@ export function checkProduct(p, groupSizes = {}) {
   const group = (p.variant_group || '').trim()
   if (group.length > LIMITS.variantGroup) errors.push(`Group key can be at most ${LIMITS.variantGroup} characters.`)
   else if (group && (groupSizes[group.toLowerCase()] || 0) < 2) warnings.push('No other product uses this group key, so no other versions are shown.')
+  if (p.barcode != null && p.barcode !== '') {
+    if (typeof p.barcode !== 'string') errors.push('Barcode must be text, not a number (a number loses leading zeros). Retype it here, or put it in quotes in the file.')
+    else if (p.barcode.trim().length > LIMITS.barcode) errors.push(`Barcode can be at most ${LIMITS.barcode} characters.`)
+    else {
+      const twins = (barcodes[p.barcode.trim()] || []).filter((id) => id !== p.id)
+      if (twins.length) warnings.push(`Barcode is also used by ${twins.map((id) => '#' + id).join(', ')}, so they share the same Odoo stock.`)
+    }
+  }
   return { errors, warnings }
 }
 
@@ -143,6 +167,36 @@ export function groupSizes(products) {
     if (key) sizes[key] = (sizes[key] || 0) + 1
   }
   return sizes
+}
+
+/** Lower-cased brand → its first spelling in file order (the store backend compares against that one). */
+export function brandSpellings(products) {
+  const spellings = {}
+  for (const p of products) {
+    const brand = typeof p.brand === 'string' ? p.brand.trim() : ''
+    if (brand && !(brand.toLowerCase() in spellings)) spellings[brand.toLowerCase()] = brand
+  }
+  return spellings
+}
+
+/** Barcode → IDs of the products that use it. */
+export function barcodeIndex(products) {
+  const index = {}
+  for (const p of products) {
+    const code = typeof p.barcode === 'string' ? p.barcode.trim() : ''
+    if (code) (index[code] ||= []).push(p.id)
+  }
+  return index
+}
+
+/** The catalogue's brands, A–Z. */
+export const brandList = (products) => Object.values(brandSpellings(products)).sort((a, b) => a.localeCompare(b))
+
+/** The existing brand a name starts with (the longest match), or ''. */
+export function brandFromName(name, brands) {
+  const n = (name || '').trim().toLowerCase()
+  return brands.filter((b) => n === b.toLowerCase() || n.startsWith(b.toLowerCase() + ' '))
+    .sort((a, b) => b.length - a.length)[0] || ''
 }
 
 // --- Similar products and group keys ---

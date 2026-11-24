@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { omr, previewUrl } from '../api'
 import {
   checkProduct, groupSizes, groupsIndex, similarProducts, suggestGroupKey, sharedFields, sameShared, LIMITS, isMarked,
+  brandSpellings, barcodeIndex, brandList, brandFromName,
 } from './productFile'
 
 // Side drawer to add or edit one product. Works on a copy; nothing changes until Save.
@@ -23,6 +24,7 @@ const changed = computed(() => JSON.stringify([draft.value, links.value]) !== st
 function fromProduct(p) {
   return {
     ...JSON.parse(JSON.stringify(p)), // a plain copy (structuredClone rejects Vue's reactive proxies)
+    brand: p.brand ?? '',
     price: p.price ?? '',
     original_price: p.original_price ?? '',
     short_description: p.short_description ?? '',
@@ -30,6 +32,7 @@ function fromProduct(p) {
     category: p.category ?? '',
     color: p.color ?? '',
     variant_group: p.variant_group ?? '',
+    barcode: p.barcode ?? '', // kept as it is (even a number) so the check below can flag it
     image_url: [...(p.image_url || [])],
     badgesText: (p.badges || []).join(', '),
     specRows: Object.entries(p.specs || {}).map(([key, value]) => ({ key, value: String(value) })),
@@ -46,10 +49,12 @@ function toProduct(d) {
   return {
     ...rest,
     name: rest.name.trim(),
+    brand: typeof rest.brand === 'string' ? rest.brand.trim() : rest.brand,
     price: rest.price === '' ? '' : Number(rest.price),
     original_price: rest.original_price === '' || rest.original_price == null ? null : Number(rest.original_price),
     color: rest.color.trim(),
     variant_group: rest.variant_group.trim(),
+    barcode: typeof rest.barcode === 'string' ? rest.barcode.trim() : rest.barcode,
     badges: badgesText.split(',').map((b) => b.trim()).filter(Boolean),
     specs,
     availability: inStock ? undefined : false,
@@ -65,6 +70,12 @@ const groups = computed(() => groupsIndex(others.value))
 const categories = computed(() => [...new Set(props.products.map((p) => p.category).filter(Boolean))].sort())
 const colors = computed(() => [...new Set(props.products.map((p) => p.color).filter(Boolean))].sort())
 const badges = computed(() => [...new Set(props.products.flatMap((p) => p.badges || []))].sort())
+const brands = computed(() => brandList(props.products))
+// An existing brand the name starts with, offered when the Brand field doesn't already say it.
+const suggestedBrand = computed(() => {
+  const b = brandFromName(draft.value.name, brands.value)
+  return b && b !== (draft.value.brand || '').trim() ? b : ''
+})
 
 const groupKey = computed(() => draft.value.variant_group.trim())
 const groupLower = computed(() => groupKey.value.toLowerCase())
@@ -192,7 +203,7 @@ const checks = computed(() => {
   const sizes = groupSizes([...others.value, product])
   // Products linked now count toward the group too.
   if (groupLower.value) sizes[groupLower.value] = Math.max(sizes[groupLower.value] || 0, versions.value.length + 1)
-  return checkProduct(product, sizes)
+  return checkProduct(product, sizes, brandSpellings([...others.value, product]), barcodeIndex([...others.value, product]))
 })
 
 const showErrors = ref(false)
@@ -247,7 +258,14 @@ watch(() => draft.value.name, () => { showErrors.value = false })
       <section class="stack">
         <label class="field">Name
           <input ref="nameInput" v-model="draft.name" type="text" placeholder="e.g. Redmi 17 4/128GB - Black" />
-          <span class="hint">Put the color at the end after “ - ”, like the rest of the catalogue.</span>
+          <span class="hint">Start with the brand and put the color at the end after “ - ”, like the rest of the catalogue.</span>
+        </label>
+        <label class="field">Brand
+          <div class="row nowrap">
+            <input v-model="draft.brand" type="text" list="pf-brands" :maxlength="LIMITS.brand" placeholder="e.g. Porodo" style="flex: 1" />
+            <button v-if="suggestedBrand" class="btn sm" type="button" title="The name starts with this brand" @click="draft.brand = suggestedBrand">Use “{{ suggestedBrand }}”</button>
+          </div>
+          <span class="hint">Spelled the same as on the brand’s other products. Leave empty only if the product has no brand.</span>
         </label>
 
         <div v-if="similar.length" class="suggest">
@@ -353,6 +371,10 @@ watch(() => draft.value.name, () => { showErrors.value = false })
         </div>
         <label class="check"><input v-model="draft.inStock" type="checkbox" /> In stock</label>
         <span v-if="!draft.inStock" class="muted small">The product page shows “Out of stock” and a Notify me button instead of Add to cart.</span>
+        <label class="field"><span>Barcode <span class="hint">(optional)</span></span>
+          <input v-model="draft.barcode" type="text" inputmode="numeric" autocomplete="off" :maxlength="LIMITS.barcode" placeholder="Odoo variant barcode, e.g. 0194644199562" />
+          <span class="hint">Links this product to Odoo for live stock, which then overrides In stock. Each version has its own. Customers never see it.</span>
+        </label>
         <label class="check"><input v-model="draft.marked" type="checkbox" /> Marked <span v-if="versions.length" class="shared-tag">Shared</span></label>
         <span class="muted small">Internal only, customers never see it. Use it to find products again later in the Marked filter, e.g. a price lowered for one day that has to be put back.<template v-if="versions.length"> Applies to every version in the group.</template></span>
         <label class="field"><span>Max per order <span v-if="versions.length" class="shared-tag">Shared</span></span>
@@ -444,6 +466,7 @@ watch(() => draft.value.name, () => { showErrors.value = false })
     <datalist id="pf-categories"><option v-for="c in categories" :key="c" :value="c" /></datalist>
     <datalist id="pf-colors"><option v-for="c in colors" :key="c" :value="c" /></datalist>
     <datalist id="pf-badges"><option v-for="b in badges" :key="b" :value="b" /></datalist>
+    <datalist id="pf-brands"><option v-for="b in brands" :key="b" :value="b" /></datalist>
   </aside>
 </template>
 
