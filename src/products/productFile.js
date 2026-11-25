@@ -48,8 +48,9 @@ export function toFileProduct(p) {
     specs: p.specs && typeof p.specs === 'object' ? p.specs : null,
     original_price: p.original_price === '' || p.original_price == null ? undefined : Number(p.original_price),
     price: p.price === '' || p.price == null ? p.price : Number(p.price),
-    // Only out-of-stock products carry the flag; missing means in stock.
-    availability: p.availability === false ? false : undefined,
+    // Like the store (porodo/main.py, Product.availability): `true` = always in stock, whatever Odoo says.
+    // Missing = stock from Odoo for a product with a barcode, otherwise out of stock. Only `true` is written.
+    availability: p.availability === true ? true : undefined,
     // Only limited products carry it (e.g. 1 or 2 per order); missing means the store-wide limit.
     max_quantity: p.max_quantity === '' || p.max_quantity == null ? undefined : Number(p.max_quantity),
     // Internal flag (not shown in the store): only marked products carry it, as 1.

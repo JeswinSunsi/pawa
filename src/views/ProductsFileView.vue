@@ -1,23 +1,28 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import { omr, previewUrl } from '../api'
+import { omr, previewUrl, api } from '../api'
 import ProductEditor from '../products/ProductEditor.vue'
 import {
   parseProductsFile, serialize, toFileProduct, nextId, blankProduct, checkProduct, groupSizes, groupsIndex,
   suggestGroupKey, sharedFields, sameShared, isMarked, brandSpellings, barcodeIndex, brandList,
 } from '../products/productFile'
 
-// Edit the store's products.json in the browser: import the file, change it, download the new one.
+// Edit the store's products.json in the browser. The file is loaded from the store's GitHub repository
+// (GET /admin/products-file, porodo/products_repo.py) and Publish commits it back; the backend redeploys
+// on that commit, so the store shows the change a few minutes later.
 // Work in progress is kept in this browser (localStorage), so a refresh or closed tab loses nothing.
+// If the backend can't reach GitHub (no GITHUB_TOKEN), the file can still be imported and downloaded by hand.
 
 const DRAFT_KEY = 'adminProductsDraft'
 const PAGE = 50
+const clone = (v) => JSON.parse(JSON.stringify(v))
 
 const fileName = ref('')
 const products = ref([])
-const baseline = ref([]) // the file as imported, to show what changed
-const unsavedSinceDownload = ref(false)
-const lastDownload = ref(null)
+const baseline = ref([]) // the file as loaded (or last published), to show what changed
+const unpublished = ref(false) // edits not published yet (for an imported file: not downloaded yet)
+const baseSha = ref('') // the store version the edits started from; '' for a file imported by hand
+const lastPublished = ref(null)
 const draftWarning = ref('')
 
 // --- Draft in this browser ---
@@ -28,8 +33,9 @@ function readDraft() {
       fileName.value = d.fileName || 'products.json'
       products.value = d.products
       baseline.value = d.baseline
-      unsavedSinceDownload.value = Boolean(d.unsavedSinceDownload)
-      lastDownload.value = d.lastDownload || null
+      unpublished.value = Boolean(d.unpublished ?? d.unsavedSinceDownload)
+      baseSha.value = d.baseSha || ''
+      lastPublished.value = d.lastPublished || null
     }
   } catch { localStorage.removeItem(DRAFT_KEY) }
 }
@@ -43,26 +49,68 @@ function writeDraft() {
       if (!products.value.length && !baseline.value.length) localStorage.removeItem(DRAFT_KEY)
       else localStorage.setItem(DRAFT_KEY, JSON.stringify({
         fileName: fileName.value, products: products.value, baseline: baseline.value,
-        unsavedSinceDownload: unsavedSinceDownload.value, lastDownload: lastDownload.value,
+        unpublished: unpublished.value, baseSha: baseSha.value, lastPublished: lastPublished.value,
       }))
       draftWarning.value = ''
     } catch {
-      draftWarning.value = 'This browser couldn’t keep a backup of your changes. Download the file before closing the tab.'
+      draftWarning.value = 'This browser couldn’t keep a backup of your changes. Publish (or download the file) before closing the tab.'
     }
   }, 400)
 }
-watch([products, baseline, unsavedSinceDownload, lastDownload], writeDraft, { deep: true })
-onBeforeUnmount(() => clearTimeout(saveTimer))
+watch([products, baseline, unpublished, baseSha, lastPublished], writeDraft, { deep: true })
+onBeforeUnmount(() => { clearTimeout(saveTimer); clearTimeout(deployTimer) })
 
 const loaded = computed(() => baseline.value.length > 0 || products.value.length > 0)
+const fromStore = computed(() => Boolean(baseSha.value))
 
-// --- Import ---
+// --- Load from the store ---
+const storeLoading = ref(false)
+const storeError = ref('')
+const remoteMoved = ref(false) // someone published since this draft was loaded
+
+async function loadFromStore({ ask = true } = {}) {
+  if (ask && unpublished.value && !confirm('Load the store’s current products.json? Your unpublished changes will be lost.')) return
+  storeLoading.value = true
+  storeError.value = ''
+  try {
+    const d = await api('/admin/products-file')
+    const list = parseProductsFile(d.content)
+    fileName.value = d.path || 'products.json'
+    products.value = list
+    baseline.value = clone(list)
+    baseSha.value = d.sha
+    unpublished.value = false
+    lastPublished.value = null
+    remoteMoved.value = false
+    publishError.value = ''
+    editing.value = null
+    resetView()
+    if (!d.deployed) watchDeploy(d.sha)
+    else deploy.value = ''
+  } catch (e) {
+    storeError.value = e.message
+  } finally {
+    storeLoading.value = false
+  }
+}
+
+// Opening the tab: keep a draft with unpublished edits (and warn if the store moved on), otherwise load the store's file.
+async function init() {
+  if (!(loaded.value && unpublished.value)) return loadFromStore({ ask: false })
+  if (!baseSha.value) return
+  try {
+    const d = await api('/admin/products-file')
+    remoteMoved.value = d.sha !== baseSha.value
+  } catch { /* shown when publishing */ }
+}
+
+// --- Import by hand (fallback when the store file can't be loaded) ---
 const importError = ref('')
 const dragging = ref(false)
 const fileInput = ref(null)
 
 function chooseFile() {
-  if (unsavedSinceDownload.value && !confirm('You have changes you haven’t downloaded yet. Importing another file replaces them. Continue?')) return
+  if (unpublished.value && !confirm('You have changes you haven’t published yet. Importing another file replaces them. Continue?')) return
   fileInput.value?.click()
 }
 async function importFile(file) {
@@ -73,9 +121,11 @@ async function importFile(file) {
     if (!list.length) throw new Error('The file has no products.')
     fileName.value = file.name
     products.value = list
-    baseline.value = JSON.parse(JSON.stringify(list))
-    unsavedSinceDownload.value = false
-    lastDownload.value = null
+    baseline.value = clone(list)
+    baseSha.value = ''
+    unpublished.value = false
+    lastPublished.value = null
+    remoteMoved.value = false
     resetView()
     flash(`Imported ${list.length} products from ${file.name}.`)
   } catch (e) {
@@ -90,20 +140,20 @@ function onDrop(e) {
   dragging.value = false
   const file = e.dataTransfer?.files?.[0]
   if (!file) return
-  if (loaded.value && unsavedSinceDownload.value && !confirm('You have changes you haven’t downloaded yet. Importing another file replaces them. Continue?')) return
+  if (loaded.value && unpublished.value && !confirm('You have changes you haven’t published yet. Importing another file replaces them. Continue?')) return
   importFile(file)
 }
 function closeFile() {
-  if (unsavedSinceDownload.value && !confirm('Close this file? Changes you haven’t downloaded will be lost.')) return
+  if (unpublished.value && !confirm('Close this file? Changes you haven’t downloaded will be lost.')) return
   products.value = []
   baseline.value = []
   fileName.value = ''
-  unsavedSinceDownload.value = false
-  lastDownload.value = null
+  unpublished.value = false
+  lastPublished.value = null
   editing.value = null
 }
 
-// --- What changed since the import ---
+// --- What changed since the file was loaded ---
 const baselineById = computed(() => new Map(baseline.value.map((p) => [p.id, JSON.stringify(toFileProduct(p))])))
 const statusOf = computed(() => {
   const status = new Map()
@@ -246,7 +296,7 @@ function onSave(product, links) {
       synced++
     }
   }
-  unsavedSinceDownload.value = true
+  unpublished.value = true
   const linked = links.length ? ` and grouped with ${links.length} other product${links.length > 1 ? 's' : ''}` : ''
   const updated = synced ? ` Updated the shared content on ${synced} other version${synced > 1 ? 's' : ''}.` : ''
   flash(`${editing.value?.isNew ? 'Added' : 'Saved'} #${product.id}${linked}.${updated}`)
@@ -259,7 +309,7 @@ function onDelete(id) {
   if (index === -1) return
   lastDeleted = { product: products.value[index], index }
   products.value.splice(index, 1)
-  unsavedSinceDownload.value = true
+  unpublished.value = true
   editing.value = null
   flash(`Deleted #${id}.`, { label: 'Undo', run: undoDelete })
 }
@@ -275,11 +325,11 @@ function restore(p) {
   const after = baseline.value.slice(0, at).reverse().find((b) => currentIds.value.has(b.id))
   const index = after ? products.value.findIndex((x) => x.id === after.id) + 1 : 0
   products.value.splice(index, 0, JSON.parse(JSON.stringify(p)))
-  unsavedSinceDownload.value = true
+  unpublished.value = true
   flash(`Restored #${p.id}.`)
 }
 function revert(p) {
-  if (!confirm(`Undo all changes to #${p.id} since the import?`)) return
+  if (!confirm(`Undo all changes to #${p.id} since it was loaded?`)) return
   const original = baseline.value.find((b) => b.id === p.id)
   const index = products.value.findIndex((x) => x.id === p.id)
   if (original && index !== -1) products.value[index] = JSON.parse(JSON.stringify(original))
@@ -287,9 +337,79 @@ function revert(p) {
   flash(`Reverted #${p.id}.`)
 }
 
-// --- Download ---
+// --- Publish ---
+const publishing = ref(false)
+const publishError = ref('')
+const deploy = ref('') // '' | 'pending' (published, the backend is redeploying) | 'live'
+let deployTimer = null
+let deployDeadline = 0
+
+function idList(ids) {
+  return ids.slice(0, 8).map((id) => '#' + id).join(', ') + (ids.length > 8 ? ` +${ids.length - 8} more` : '')
+}
+function commitMessage() {
+  const of = (kind) => [...statusOf.value].filter(([, s]) => s === kind).map(([id]) => id)
+  const edited = of('edited')
+  const added = of('added')
+  if (edited.length + added.length === 1 && !deleted.value.length) {
+    const p = products.value.find((x) => x.id === (edited[0] ?? added[0]))
+    return `Products: ${edited.length ? 'edit' : 'add'} #${p.id} ${p.name}`.slice(0, 200)
+  }
+  const parts = []
+  if (edited.length) parts.push(`edit ${idList(edited)}`)
+  if (added.length) parts.push(`add ${idList(added)}`)
+  if (deleted.value.length) parts.push(`delete ${idList(deleted.value.map((p) => p.id))}`)
+  return `Products: ${parts.join('; ') || 'update'}`.slice(0, 200)
+}
+
+async function publish() {
+  publishError.value = ''
+  if (errorCount.value) {
+    filter.value = 'problems'
+    publishError.value = `${errorCount.value} product${errorCount.value > 1 ? 's have' : ' has'} problems the store can’t load (shown below). Fix them, then publish.`
+    return
+  }
+  let sha = baseSha.value
+  if (!sha) {
+    if (!confirm('These changes started from a file you imported, not the store’s current one. Publishing replaces the store’s products.json with yours, including anything changed there since. Continue?')) return
+    try { sha = (await api('/admin/products-file')).sha } catch (e) { publishError.value = e.message; return }
+  }
+  publishing.value = true
+  try {
+    const r = await api('/admin/products-file', {
+      method: 'PUT', body: { content: serialize(products.value), sha, message: commitMessage() },
+    })
+    baseSha.value = r.sha
+    baseline.value = clone(products.value)
+    unpublished.value = false
+    remoteMoved.value = false
+    lastPublished.value = new Date().toISOString()
+    flash(`Published ${r.count} products. The store shows the changes in a few minutes, once the backend redeploys.`)
+    watchDeploy(r.sha)
+  } catch (e) {
+    publishError.value = e.message
+  } finally {
+    publishing.value = false
+  }
+}
+
+// After publishing, ask the backend which file it runs until it's the published one.
+function watchDeploy(sha) {
+  clearTimeout(deployTimer)
+  deploy.value = 'pending'
+  deployDeadline = Date.now() + 30 * 60 * 1000
+  const check = async () => {
+    try {
+      const d = await api('/admin/products-file/deployed')
+      if (d.sha === sha) { deploy.value = 'live'; return }
+    } catch { /* the backend restarts during a deploy; keep asking */ }
+    if (sha !== baseSha.value || Date.now() > deployDeadline) { deploy.value = ''; return } // superseded or gave up
+    deployTimer = setTimeout(check, 20000)
+  }
+  deployTimer = setTimeout(check, 5000)
+}
+
 function download() {
-  if (errorCount.value && !confirm(`${errorCount.value} product${errorCount.value > 1 ? 's have' : ' has'} problems the store can’t load (see the Problems filter). Download anyway?`)) return
   const blob = new Blob([serialize(products.value)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -297,12 +417,11 @@ function download() {
   a.download = 'products.json'
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
-  unsavedSinceDownload.value = false
-  lastDownload.value = new Date().toISOString()
-  flash('Downloaded products.json. Replace the file in the store repository and deploy to publish.')
+  if (!fromStore.value) unpublished.value = false
+  flash(fromStore.value ? 'Downloaded a copy of products.json.' : 'Downloaded products.json. Replace the file in the store repository and deploy to publish.')
 }
-const lastDownloadText = computed(() => lastDownload.value
-  ? new Date(lastDownload.value).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '')
+const lastPublishedText = computed(() => lastPublished.value
+  ? new Date(lastPublished.value).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '')
 
 // --- Toast ---
 const toast = ref(null)
@@ -318,6 +437,8 @@ function runToastAction() {
   run?.()
 }
 
+init()
+
 function problemText(p) {
   const r = problems.value.get(p)
   return r ? [...r.errors, ...r.warnings].join('\n') : ''
@@ -328,19 +449,29 @@ function problemText(p) {
   <div class="page-head">
     <h1>Products file</h1>
     <div v-if="loaded" class="row">
-      <button class="btn" @click="chooseFile">Import another file</button>
-      <button class="btn" :class="{ primary: unsavedSinceDownload }" @click="download">
+      <button v-if="!fromStore" class="btn" @click="chooseFile">Import another file</button>
+      <button class="btn" title="Download a copy of products.json" @click="download">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
-        Download products.json
+        Download
       </button>
-      <button class="btn primary" @click="addProduct">+ Add product</button>
+      <button class="btn" @click="addProduct">+ Add product</button>
+      <button class="btn primary" :disabled="publishing || (fromStore && !anyChange)" @click="publish">
+        {{ publishing ? 'Publishing…' : 'Publish' }}<span v-if="anyChange" class="num"> ({{ counts.added + counts.edited + counts.deleted }})</span>
+      </button>
     </div>
   </div>
   <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onPick" />
 
-  <!-- Nothing imported yet -->
-  <div v-if="!loaded" class="card">
+  <!-- Loading the store's file -->
+  <div v-if="!loaded && (storeLoading || !storeError)" class="card">
+    <div class="card-body empty">Loading products.json from the store…</div>
+  </div>
+
+  <!-- The store's file couldn't be loaded: import it by hand -->
+  <div v-else-if="!loaded" class="card">
     <div class="card-body stack">
+      <p class="error" style="margin: 0">Couldn’t load products.json from the store: {{ storeError }}</p>
+      <div class="row"><button class="btn" :disabled="storeLoading" @click="loadFromStore()">Try again</button></div>
       <button
         class="dropzone" :class="{ over: dragging }" @click="fileInput?.click()"
         @dragover.prevent="dragging = true" @dragleave="dragging = false" @drop.prevent="onDrop"
@@ -351,7 +482,7 @@ function problemText(p) {
       </button>
       <p v-if="importError" class="error" style="margin: 0">{{ importError }}</p>
       <div class="notice stack" style="gap: 6px">
-        <strong>How it works</strong>
+        <strong>Meanwhile, by hand</strong>
         <span>1. Import the store’s current <code>products.json</code> (in the store repository).</span>
         <span>2. Edit, add or delete products. Your work is kept in this browser until you download it.</span>
         <span>3. Download the new <code>products.json</code>, replace the old file in the store repository and deploy.</span>
@@ -372,11 +503,17 @@ function problemText(p) {
         <span v-else class="muted small">No changes yet</span>
       </div>
       <div class="row small">
-        <span v-if="unsavedSinceDownload" class="warn-text">Changes not downloaded yet</span>
-        <span v-else-if="lastDownloadText" class="muted">Downloaded {{ lastDownloadText }}</span>
-        <button class="btn ghost sm" @click="closeFile">Close file</button>
+        <span v-if="fromStore ? anyChange : unpublished" class="warn-text">{{ fromStore ? 'Not published yet' : 'Changes not downloaded yet' }}</span>
+        <span v-else-if="deploy === 'pending'" class="muted"><span class="spin" aria-hidden="true" /> Published{{ lastPublishedText ? ' ' + lastPublishedText : '' }}, updating the store (a few minutes)…</span>
+        <span v-else-if="deploy === 'live'" class="ok-text">Live on the store</span>
+        <span v-else-if="fromStore" class="muted">Same as the store</span>
+        <button v-if="fromStore" class="btn ghost sm" :disabled="storeLoading" title="Load the store’s current products.json" @click="loadFromStore()">{{ unpublished ? 'Discard changes' : 'Reload' }}</button>
+        <button v-else class="btn ghost sm" @click="closeFile">Close file</button>
       </div>
     </div>
+    <p v-if="remoteMoved" class="notice">Someone published products.json after you started these changes, so publishing them will be refused. Download your version as a backup, then <button class="link" @click="loadFromStore()">load the latest file</button> and redo your changes.</p>
+    <p v-if="publishError" class="error">{{ publishError }}</p>
+    <p v-if="storeError" class="error">Couldn’t load products.json from the store: {{ storeError }}</p>
     <p v-if="importError" class="error">{{ importError }}</p>
     <p v-if="draftWarning" class="error">{{ draftWarning }}</p>
 
@@ -435,7 +572,7 @@ function problemText(p) {
             </div>
             <span v-if="problems.get(p)" class="problem" :class="{ bad: problems.get(p).errors.length }" :title="problemText(p)" aria-label="Has problems">!</span>
             <div class="row-actions" @click.stop>
-              <button v-if="statusOf.get(p.id) === 'edited'" class="btn sm ghost" title="Undo changes since the import" @click="revert(p)">Revert</button>
+              <button v-if="statusOf.get(p.id) === 'edited'" class="btn sm ghost" title="Undo your unpublished changes to this product" @click="revert(p)">Revert</button>
             </div>
           </li>
         </ul>
@@ -447,7 +584,7 @@ function problemText(p) {
     </div>
 
     <details v-if="deleted.length" class="card deleted-card">
-      <summary class="card-head"><h3>Deleted since the import <span class="count num">{{ deleted.length }}</span></h3></summary>
+      <summary class="card-head"><h3>Not published: deleted <span class="count num">{{ deleted.length }}</span></h3></summary>
       <ul class="plist card-body">
         <li v-for="p in deleted" :key="p.id" class="prow static">
           <img :src="previewUrl(p.image_url?.[0])" alt="" class="pthumb" loading="lazy" />
@@ -496,6 +633,10 @@ function problemText(p) {
 .tag.limit { background: #eef4fc; color: var(--info); }
 .tag.marked { background: #f4ebfc; color: #6b2fa3; }
 .warn-text { color: var(--warn); font-weight: 500; }
+.ok-text { color: var(--ok); font-weight: 500; }
+.spin { display: inline-block; width: 10px; height: 10px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -1px; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.link { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
 
 .filters { gap: 10px; justify-content: flex-start; }
 .grow { flex: 1 1 240px; }

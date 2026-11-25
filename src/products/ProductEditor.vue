@@ -36,7 +36,7 @@ function fromProduct(p) {
     image_url: [...(p.image_url || [])],
     badgesText: (p.badges || []).join(', '),
     specRows: Object.entries(p.specs || {}).map(([key, value]) => ({ key, value: String(value) })),
-    inStock: p.availability !== false,
+    inStock: p.availability === true,
     max_quantity: p.max_quantity ?? '',
     marked: isMarked(p),
   }
@@ -57,7 +57,7 @@ function toProduct(d) {
     barcode: typeof rest.barcode === 'string' ? rest.barcode.trim() : rest.barcode,
     badges: badgesText.split(',').map((b) => b.trim()).filter(Boolean),
     specs,
-    availability: inStock ? undefined : false,
+    availability: inStock ? true : undefined,
     max_quantity: rest.max_quantity === '' || rest.max_quantity == null ? undefined : Number(rest.max_quantity),
     marker: marked ? 1 : undefined,
   }
@@ -369,11 +369,13 @@ watch(() => draft.value.name, () => { showErrors.value = false })
             <span class="hint">Above the price = shown as a discount.</span>
           </label>
         </div>
-        <label class="check"><input v-model="draft.inStock" type="checkbox" /> In stock</label>
-        <span v-if="!draft.inStock" class="muted small">The product page shows “Out of stock” and a Notify me button instead of Add to cart.</span>
+        <label class="check"><input v-model="draft.inStock" type="checkbox" /> Always in stock</label>
+        <span v-if="draft.inStock" class="muted small">Shown in stock whatever Odoo says.</span>
+        <span v-else-if="String(draft.barcode || '').trim()" class="muted small">Stock comes from Odoo through the barcode below.</span>
+        <span v-else class="muted small warn-note">No barcode: the store shows “Out of stock” and a Notify me button instead of Add to cart.</span>
         <label class="field"><span>Barcode <span class="hint">(optional)</span></span>
           <input v-model="draft.barcode" type="text" inputmode="numeric" autocomplete="off" :maxlength="LIMITS.barcode" placeholder="Odoo variant barcode, e.g. 0194644199562" />
-          <span class="hint">Links this product to Odoo for live stock, which then overrides In stock. Each version has its own. Customers never see it.</span>
+          <span class="hint">Links this product to Odoo for live stock (unless Always in stock is on). Each version has its own. Customers never see it.</span>
         </label>
         <label class="check"><input v-model="draft.marked" type="checkbox" /> Marked <span v-if="versions.length" class="shared-tag">Shared</span></label>
         <span class="muted small">Internal only, customers never see it. Use it to find products again later in the Marked filter, e.g. a price lowered for one day that has to be put back.<template v-if="versions.length"> Applies to every version in the group.</template></span>
@@ -471,6 +473,7 @@ watch(() => draft.value.name, () => { showErrors.value = false })
 </template>
 
 <style scoped>
+.warn-note { color: var(--warn); }
 .editor { width: min(640px, 100vw); }
 .title { font-size: 17px; overflow-wrap: anywhere; }
 .drawer-body > section { border-bottom: 1px solid var(--line-soft); padding-bottom: 22px; }
