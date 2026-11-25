@@ -75,16 +75,21 @@ export function serialize(products) {
 }
 
 // Every version in a group shares these: joining a group copies them, and saving one version updates the rest.
-// max_quantity and marker too: a per-order limit or a mark on one version applies to all of them.
-export const SHARED_FIELDS = ['image_url', 'short_description', 'description', 'specs', 'max_quantity', 'marker']
+// Only colour, price, original price and barcode differ between versions.
+export const SHARED_FIELDS = ['brand', 'category', 'badges', 'image_url', 'short_description', 'description', 'specs',
+  'availability', 'max_quantity', 'marker']
 
 /** A copy of the fields a product shares with the rest of its group. */
 export function sharedFields(p) {
   return {
+    brand: typeof p.brand === 'string' ? p.brand.trim() || null : p.brand ?? null,
+    category: typeof p.category === 'string' ? p.category.trim() || null : p.category ?? null,
+    badges: (p.badges || []).map((b) => b.trim()).filter(Boolean),
     image_url: [...(p.image_url || [])],
     short_description: p.short_description ?? '',
     description: p.description ?? '',
     specs: { ...(p.specs || {}) },
+    availability: p.availability === true ? true : null,
     max_quantity: p.max_quantity === '' || p.max_quantity == null ? null : Number(p.max_quantity),
     marker: isMarked(p) ? 1 : null,
   }

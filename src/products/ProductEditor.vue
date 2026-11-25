@@ -109,16 +109,22 @@ function groupWith(p) {
   if (!links.value.includes(p.id)) links.value.push(p.id)
 }
 
-// --- Content shared by a group: images, short description, description, specifications, max per order, marker ---
+// --- Content shared by a group: brand, category, tags, images, descriptions, specifications,
+// always in stock, max per order, marker ---
 function draftShared() {
   return JSON.parse(JSON.stringify({
+    brand: draft.value.brand, category: draft.value.category, badgesText: draft.value.badgesText,
     image_url: draft.value.image_url, short_description: draft.value.short_description,
-    description: draft.value.description, specRows: draft.value.specRows, max_quantity: draft.value.max_quantity,
-    marked: draft.value.marked,
+    description: draft.value.description, specRows: draft.value.specRows, inStock: draft.value.inStock,
+    max_quantity: draft.value.max_quantity, marked: draft.value.marked,
   }))
 }
 function applyShared(p) {
   const s = sharedFields(p)
+  draft.value.brand = s.brand ?? ''
+  draft.value.category = s.category ?? ''
+  draft.value.badgesText = s.badges.join(', ')
+  draft.value.inStock = s.availability === true
   draft.value.image_url = s.image_url
   draft.value.short_description = s.short_description
   draft.value.description = s.description
@@ -260,7 +266,7 @@ watch(() => draft.value.name, () => { showErrors.value = false })
           <input ref="nameInput" v-model="draft.name" type="text" placeholder="e.g. Redmi 17 4/128GB - Black" />
           <span class="hint">Start with the brand and put the color at the end after “ - ”, like the rest of the catalogue.</span>
         </label>
-        <label class="field">Brand
+        <label class="field"><span>Brand <span v-if="versions.length" class="shared-tag">Shared</span></span>
           <div class="row nowrap">
             <input v-model="draft.brand" type="text" list="pf-brands" :maxlength="LIMITS.brand" placeholder="e.g. Porodo" style="flex: 1" />
             <button v-if="suggestedBrand" class="btn sm" type="button" title="The name starts with this brand" @click="draft.brand = suggestedBrand">Use “{{ suggestedBrand }}”</button>
@@ -344,11 +350,11 @@ watch(() => draft.value.name, () => { showErrors.value = false })
         </div>
 
         <div v-if="copied" class="copied">
-          <span>Copied the images, descriptions, specifications, max per order and mark from <strong>{{ copied.from }}</strong>, since versions in a group share them.</span>
+          <span>Copied the brand, category, tags, images, descriptions, specifications, always in stock, max per order and mark from <strong>{{ copied.from }}</strong>, since versions in a group share them.</span>
           <button class="btn sm" @click="undoCopy">Undo</button>
         </div>
         <div v-if="versions.length" class="shared-note small">
-          Images, short description, description and specifications are shared by all
+          Brand, category, tags, images, descriptions, specifications, always in stock, max per order and mark are shared by all
           {{ versions.length + 1 }} versions. Saving updates them on every version.
           <span v-if="differing.length" class="warn-text">
             {{ differing.length }} version{{ differing.length > 1 ? 's' : '' }} currently
@@ -369,7 +375,7 @@ watch(() => draft.value.name, () => { showErrors.value = false })
             <span class="hint">Above the price = shown as a discount.</span>
           </label>
         </div>
-        <label class="check"><input v-model="draft.inStock" type="checkbox" /> Always in stock</label>
+        <label class="check"><input v-model="draft.inStock" type="checkbox" /> Always in stock <span v-if="versions.length" class="shared-tag">Shared</span></label>
         <span v-if="draft.inStock" class="muted small">Shown in stock whatever Odoo says.</span>
         <span v-else-if="String(draft.barcode || '').trim()" class="muted small">Stock comes from Odoo through the barcode below.</span>
         <span v-else class="muted small warn-note">No barcode: the store shows “Out of stock” and a Notify me button instead of Add to cart.</span>
@@ -390,10 +396,10 @@ watch(() => draft.value.name, () => { showErrors.value = false })
       <section class="stack">
         <div class="section-title">Details</div>
         <div class="two">
-          <label class="field">Category
+          <label class="field"><span>Category <span v-if="versions.length" class="shared-tag">Shared</span></span>
             <input v-model="draft.category" type="text" list="pf-categories" placeholder="Choose or type" />
           </label>
-          <label class="field">Tags
+          <label class="field"><span>Tags <span v-if="versions.length" class="shared-tag">Shared</span></span>
             <input v-model="draft.badgesText" type="text" list="pf-badges" placeholder="e.g. Sale, Hot" />
             <span class="hint">Separate with commas. The first one shows on the card.</span>
           </label>

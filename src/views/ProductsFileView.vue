@@ -269,7 +269,6 @@ function addVersionOf(source) {
     color: '',
     variant_group: key,
   }
-  delete copy.availability
   delete copy.barcode // each version has its own Odoo barcode
   editing.value = null
   // Open on the next tick so the drawer remounts with the copy.
@@ -285,7 +284,8 @@ function onSave(product, links) {
     const other = list.find((p) => p.id === id)
     if (other) other.variant_group = product.variant_group
   }
-  // Versions in a group share images, descriptions, specifications, max per order and marker: copy this product's to the rest.
+  // Versions in a group share brand, category, tags, images, descriptions, specifications, always in stock,
+  // max per order and marker (SHARED_FIELDS): copy this product's to the rest.
   const key = (product.variant_group || '').trim().toLowerCase()
   let synced = 0
   if (key) {
