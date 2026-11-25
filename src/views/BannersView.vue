@@ -10,7 +10,7 @@ const SLOTS = [
   { id: 'power-banks', label: 'Power banks' },
   { id: 'wearables', label: 'Wearables' },
   { id: 'speakers', label: 'Speakers' },
-  { id: 'earbuds', label: 'Earbuds' },
+  { id: 'audio', label: 'Audio' },
   { id: 'gaming', label: 'Gaming' },
   { id: 'chargers', label: 'Chargers' },
 ]
