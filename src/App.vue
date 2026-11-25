@@ -30,14 +30,6 @@ const tabs = {
       cutoff: { count: 4, label: 'Trending Deals shows the products above' },
     },
   },
-  limited: {
-    label: 'Limited stock', view: ProductListView, icon: 'M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
-    props: {
-      list: 'limited-stock', title: 'Limited stock', where: 'In Limited Stock',
-      notice: 'The "Limited Stock" section on the home page, shown in this order. It shows 4 per row on desktop and 2 on phones, so a multiple of 4 fills the rows evenly.',
-      emptyText: 'No products. The Limited Stock section on the home page will be empty.',
-    },
-  },
   custom: {
     label: 'Custom row', view: ProductListView, icon: 'M3 6h18M3 12h18M3 18h12M19 15l3 3-3 3',
     props: {
@@ -47,6 +39,14 @@ const tabs = {
       emptyText: 'No products. The custom row is hidden on the home page and /custom shows "No products found".',
       cutoff: { count: 10, label: 'The home page row shows the products above' },
       banners: { only: 'custom', onlyLabel: 'Banners on the /custom page', fallback: 'an empty black banner' },
+    },
+  },
+  limited: {
+    label: 'Limited stock', view: ProductListView, icon: 'M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
+    props: {
+      list: 'limited-stock', title: 'Limited stock', where: 'In Limited Stock',
+      notice: 'The "Limited Stock" section on the home page, shown in this order. It shows 4 per row on desktop and 2 on phones, so a multiple of 4 fills the rows evenly.',
+      emptyText: 'No products. The Limited Stock section on the home page will be empty.',
     },
   },
   banners: { label: 'Banners', view: BannersView, icon: 'M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6' },
