@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { api, previewUrl } from '../api'
 
-// Slots match the storefront's home category slugs (porodo/frontend/src/constants/homeCategories.js), in the same order.
+// Fixed slots match the storefront's home category slugs (porodo/frontend/src/constants/homeCategories.js), in the same order.
 const SLOTS = [
   { id: 'all', label: 'Home (All)' },
   { id: 'phones', label: 'Phones' },
@@ -14,6 +14,33 @@ const SLOTS = [
   { id: 'gaming', label: 'Gaming' },
   { id: 'chargers', label: 'Chargers' },
 ]
+
+// Catalogue categories the slots above already cover (the `categories` of each group in
+// porodo's homeCategories.js), lowercased. Every other catalogue category gets its own slot below.
+const GROUPED = new Set([
+  'smartphone', 'smartphones', 'phone', 'phones', 'tablet', 'tablets', 'power bank', 'power banks',
+  'smartwatch', 'smartwatches', 'smart watch', 'smart watches', 'wearable', 'wearables',
+  'smart band', 'smart bands', 'fitness', 'watch straps', 'glasses', 'sunglasses',
+  'speaker', 'speakers', 'bluetooth speakers', 'audio', 'earbuds', 'earphones', 'headphones',
+  'gaming', 'gaming accessory', 'gaming accessories',
+  'charger', 'chargers', 'wireless charger', 'wireless chargers', 'adapters & wall chargers', 'adapters', 'data cables',
+])
+const slugify = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+// The rest of the store's Categories page, from the live catalogue: biggest first, "Other" last.
+const extraSlots = ref([])
+async function loadCategories() {
+  try {
+    const list = await api('/categories')
+    const isOther = (c) => c.name.trim().toLowerCase() === 'other'
+    extraSlots.value = list
+      .filter((c) => c.name?.trim() && !GROUPED.has(c.name.trim().toLowerCase()))
+      .sort((a, b) => isOther(a) - isOther(b) || b.count - a.count)
+      .map((c) => ({ id: slugify(c.name), label: c.name.trim() }))
+      .filter((s, i, all) => s.id && !SLOTS.some((f) => f.id === s.id) && all.findIndex((o) => o.id === s.id) === i)
+  } catch { /* the fixed slots still work without the catalogue */ }
+}
+const allSlots = computed(() => [...SLOTS, ...extraSlots.value])
 
 // Set `only` to edit a single slot inside another tab (no slot list or page heading),
 // e.g. the /custom page's banners on the Custom row tab.
@@ -72,8 +99,11 @@ async function reset() {
     await load()
   } catch (e) { error.value = e.message }
 }
-onMounted(load)
-const slotLabel = computed(() => props.onlyLabel || SLOTS.find((s) => s.id === slot.value)?.label)
+onMounted(() => {
+  load()
+  if (!props.only) loadCategories()
+})
+const slotLabel = computed(() => props.onlyLabel || allSlots.value.find((s) => s.id === slot.value)?.label)
 </script>
 
 <template>
@@ -83,7 +113,7 @@ const slotLabel = computed(() => props.onlyLabel || SLOTS.find((s) => s.id === s
 
   <div class="banners" :class="{ single: only }">
     <nav v-if="!only" class="card slots">
-      <button v-for="s in SLOTS" :key="s.id" class="slot" :class="{ on: slot === s.id }" @click="pick(s.id)">
+      <button v-for="s in allSlots" :key="s.id" class="slot" :class="{ on: slot === s.id }" @click="pick(s.id)">
         <span>{{ s.label }}</span>
         <span v-if="saved[s.id]" class="tag">Custom</span>
       </button>
