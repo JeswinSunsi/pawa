@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { api, omr } from '../api'
+import { api, omr, refreshNewCounts } from '../api'
 
 const STATUSES = ['new', 'processing', 'done', 'cancelled']
 
@@ -42,6 +42,7 @@ async function setStatus(order, next) {
     const updated = await api(`/admin/orders/${order.order_number}`, { method: 'PATCH', body: { status: next } })
     Object.assign(order, updated)
     api('/admin/stats').then((s) => (stats.value = s))
+    refreshNewCounts()
   } catch (e) { alert(e.message) }
 }
 

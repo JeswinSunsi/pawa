@@ -59,6 +59,13 @@ code { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-si
 .nav-item span { overflow: hidden; text-overflow: ellipsis; }
 .nav-item:hover { background: var(--hover); color: var(--ink); }
 .nav-item.on { background: var(--ink); color: #fff; }
+.nav-badge {
+  margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--danger); color: #fff; font-size: 11px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.menu-btn { position: relative; }
+.menu-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 2px var(--panel); }
 .account { flex-shrink: 0; border-top: 1px solid var(--line-soft); padding-top: 12px; }
 .signout {
   display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none;

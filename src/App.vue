@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { api, token, setToken } from './api'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { api, token, setToken, newCounts, refreshNewCounts } from './api'
 import DashboardView from './views/DashboardView.vue'
 import OrdersView from './views/OrdersView.vue'
 import SupportView from './views/SupportView.vue'
@@ -67,6 +67,15 @@ function onKey(e) { if (e.key === 'Escape') menuOpen.value = false }
 onMounted(() => window.addEventListener('keydown', onKey))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
+// Red badges on Orders and Support for items still in the "new" state.
+const badge = (n) => (n > 9 ? '9+' : String(n))
+const anyNew = computed(() => newCounts.value.orders > 0 || newCounts.value.support > 0)
+let countsTimer
+onMounted(() => { refreshNewCounts(); countsTimer = setInterval(refreshNewCounts, 60000) })
+onBeforeUnmount(() => clearInterval(countsTimer))
+watch(token, (v) => { if (v) refreshNewCounts() })
+watch(tab, () => refreshNewCounts())
+
 const input = ref('')
 const loginError = ref('')
 const signingIn = ref(false)
@@ -96,6 +105,7 @@ async function login() {
     <header class="mobilebar">
       <button class="menu-btn" aria-label="Open menu" :aria-expanded="menuOpen" aria-controls="sidebar" @click="menuOpen = true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+        <i v-if="anyNew" class="menu-dot" />
       </button>
       <div class="brand"><img :src="logo" alt="MSouq" width="123" height="36" /><span>Admin</span></div>
       <span class="mobilebar-title">{{ tabs[tab].label }}</span>
@@ -114,6 +124,7 @@ async function login() {
         <button v-for="(t, key) in tabs" :key="key" class="nav-item" :class="{ on: tab === key }" :aria-current="tab === key ? 'page' : undefined" @click="select(key)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="t.icon" /></svg>
           <span>{{ t.label }}</span>
+          <b v-if="newCounts[key] > 0" class="nav-badge" :aria-label="`${newCounts[key]} new`">{{ badge(newCounts[key]) }}</b>
         </button>
       </nav>
       <div class="account">

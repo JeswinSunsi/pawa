@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { api, omr } from '../api'
+import { api, omr, refreshNewCounts } from '../api'
 
 // Support requests customers file from My orders on the storefront (backend: /admin/support, admin.py).
 const STATUSES = ['new', 'processing', 'closed']
@@ -46,6 +46,7 @@ async function setStatus(req, next) {
     const updated = await api(`/admin/support/${req.id}`, { method: 'PATCH', body: { status: next } })
     Object.assign(req, updated)
     if (byStatus.value) { byStatus.value[prev]--; byStatus.value[next]++ }
+    refreshNewCounts()
   } catch (e) { alert(e.message) } finally { saving.value = false }
 }
 

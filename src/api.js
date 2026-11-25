@@ -43,3 +43,13 @@ export function previewUrl(url) {
 
 const omrFormat = new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
 export const omr = (n) => `${omrFormat.format(Number(n || 0))} OMR`
+
+// Counts of orders and support requests in the "new" state, shown as badges in the sidebar.
+export const newCounts = ref({ orders: 0, support: 0 })
+
+export async function refreshNewCounts() {
+  if (!token.value) return
+  const [stats, support] = await Promise.allSettled([api('/admin/stats'), api('/admin/support?page=1&page_size=1&status=new')])
+  if (stats.status === 'fulfilled') newCounts.value.orders = stats.value?.by_status?.new ?? 0
+  if (support.status === 'fulfilled') newCounts.value.support = support.value?.by_status?.new ?? 0
+}
