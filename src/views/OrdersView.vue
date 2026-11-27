@@ -235,16 +235,6 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 </template>
 
 <style scoped>
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.tabs button {
-  font: inherit; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: var(--panel); color: var(--text-2);
-  padding: 8px 12px; border-radius: 999px; cursor: pointer;
-}
-.tabs button .num { color: var(--muted); margin-left: 4px; font-size: 11px; }
-.tabs button:hover { border-color: var(--ink); }
-.tabs button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
-.tabs button.on .num { color: #d1d5db; }
-.cap { text-transform: capitalize; }
 .search { width: 280px; max-width: 100%; }
 .orders td { white-space: nowrap; }
 .actions { justify-content: flex-end; flex-wrap: nowrap; }
@@ -259,19 +249,11 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
 .email-status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .customer-link { color: inherit; text-decoration: none; }
 .customer-link:hover { text-decoration: underline; text-underline-offset: 3px; }
-.history { list-style: none; margin: 0; padding: 0; }
-.history li { position: relative; padding: 0 0 22px 26px; font-size: 13px; }
-.history li:last-child { padding-bottom: 0; }
-.history .dot { position: absolute; left: 0; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px var(--panel); }
-.history li:not(:last-child)::after { content: ''; position: absolute; left: 5px; top: 20px; bottom: 9px; width: 2px; background: var(--line); }
 .history li:not(:last-child)::before { content: ''; position: absolute; left: 1px; bottom: 4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--line); }
-.h-status { font-weight: 500; margin-bottom: 2px; }
 .email-row .btn:disabled { background: var(--line-soft); border-color: var(--line); color: var(--muted); opacity: 1; cursor: not-allowed; }
 
 @media (max-width: 700px) {
   .orders-toolbar { display: flex; flex-direction: column-reverse; align-items: stretch; gap: 12px; }
-  .tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
-  .tabs button { min-height: 44px; flex-shrink: 0; white-space: nowrap; font-size: 12px; padding-inline: 9px; }
   .search { width: 100%; }
   .scroll > .orders { display: block; min-width: 0; }
   .orders thead { display: none; }
@@ -291,8 +273,7 @@ const payLabel = (o) => (o.payment_method === 'online' ? 'Online' : 'Cash')
   .order-actions { grid-area: actions; padding-top: 14px !important; border-top: 1px solid var(--line-soft) !important; }
   .actions .btn { flex: 1; }
   .orders .empty { padding: 32px 16px; }
-  .card-foot { gap: 12px; }
-  .card-foot > .row { width: 100%; }
-  .card-foot > .row > span { margin-right: auto; }
+  /* The order number and name are tap targets too (the name calls the customer). */
+  .order-link, .customer-link { display: inline-block; padding: 4px 0; }
 }
 </style>

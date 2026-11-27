@@ -307,6 +307,7 @@ onMounted(load)
 .promo-meta dd { margin: 0; overflow-wrap: anywhere; font-size: 13px; }
 @media (max-width: 700px) {
   .form-grid { grid-template-columns: 1fr; }
+  .discount-grid { grid-template-columns: 1fr; }
   .promo { padding: 16px; }
   .promo-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .promo-meta .wide { grid-column: 1 / -1; }

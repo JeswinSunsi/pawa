@@ -191,16 +191,6 @@ const payLabel = (o) => (o?.payment_method === 'online' ? 'Online' : 'Cash')
 </template>
 
 <style scoped>
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.tabs button {
-  font: inherit; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: var(--panel); color: var(--text-2);
-  padding: 8px 12px; border-radius: 999px; cursor: pointer;
-}
-.tabs button .num { color: var(--muted); margin-left: 4px; font-size: 11px; }
-.tabs button:hover { border-color: var(--ink); }
-.tabs button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
-.tabs button.on .num { color: #d1d5db; }
-.cap { text-transform: capitalize; }
 .search { width: 300px; max-width: 100%; }
 .support-card { overflow: hidden; }
 .support-toolbar { gap: 16px; }
@@ -210,20 +200,11 @@ const payLabel = (o) => (o?.payment_method === 'online' ? 'Online' : 'Cash')
 .reason { display: block; font-weight: 500; }
 .reason-line { margin: 0; font-size: 14px; font-weight: 500; }
 .message { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.5; }
-.kv a { color: inherit; }
-.history { list-style: none; margin: 0; padding: 0; }
-.history li { position: relative; padding: 0 0 22px 26px; font-size: 13px; }
-.history li:last-child { padding-bottom: 0; }
-.history .dot { position: absolute; left: 0; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px var(--panel); }
-.history li:not(:last-child)::after { content: ''; position: absolute; left: 5px; top: 20px; bottom: 9px; width: 2px; background: var(--line); }
-.h-status { font-weight: 500; margin-bottom: 2px; }
 .drawer-foot .btn:disabled { opacity: .6; cursor: not-allowed; }
 .s-closed { color: var(--muted); background: var(--hover); }
 
 @media (max-width: 700px) {
   .support-toolbar { display: flex; flex-direction: column-reverse; align-items: stretch; gap: 12px; }
-  .tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
-  .tabs button { min-height: 44px; flex-shrink: 0; white-space: nowrap; font-size: 12px; padding-inline: 9px; }
   .search { width: 100%; }
   .scroll > .support { display: block; min-width: 0; }
   .support thead { display: none; }
@@ -242,8 +223,5 @@ const payLabel = (o) => (o?.payment_method === 'online' ? 'Online' : 'Cash')
   .s-actions { grid-area: actions; }
   .s-actions .btn { width: 100%; }
   .support .empty { padding: 32px 16px; }
-  .card-foot { gap: 12px; }
-  .card-foot > .row { width: 100%; }
-  .card-foot > .row > span { margin-right: auto; }
 }
 </style>

@@ -124,10 +124,10 @@ const LANGS = { en: 'English', ar: 'Arabic', bn: 'Bengali' }
                 </div>
               </div>
             </td>
-            <td class="r num waiting">{{ p.waiting }}</td>
-            <td class="num">{{ fmtDate(p.first_request) }}</td>
-            <td><span class="pill" :class="p.in_stock ? 's-done' : 's-off'">{{ p.in_stock ? 'Back in stock' : 'Out of stock' }}</span></td>
-            <td class="r" @click.stop><button class="btn sm" @click="view(p)">View</button></td>
+            <td class="r num waiting" data-label="Waiting">{{ p.waiting }}</td>
+            <td class="num s-first" data-label="First request">{{ fmtDate(p.first_request) }}</td>
+            <td class="s-stock"><span class="pill" :class="p.in_stock ? 's-done' : 's-off'">{{ p.in_stock ? 'Back in stock' : 'Out of stock' }}</span></td>
+            <td class="r s-actions" @click.stop><button class="btn sm" @click="view(p)">View</button></td>
           </tr>
           <tr v-if="!loaded && loading"><td colspan="5"><div class="loader" role="status">Loading requests…</div></td></tr>
           <tr v-else-if="!shown.length && !loading">
@@ -184,15 +184,6 @@ const LANGS = { en: 'English', ar: 'Arabic', bn: 'Bengali' }
 </template>
 
 <style scoped>
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.tabs button {
-  font: inherit; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: var(--panel); color: var(--text-2);
-  padding: 8px 12px; border-radius: 999px; cursor: pointer;
-}
-.tabs button .num { color: var(--muted); margin-left: 4px; font-size: 11px; }
-.tabs button:hover { border-color: var(--ink); }
-.tabs button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
-.tabs button.on .num { color: #d1d5db; }
 .stock-card { overflow: hidden; }
 .stock td { white-space: nowrap; vertical-align: middle; }
 .stock td.s-product { white-space: normal; width: 55%; }
@@ -207,4 +198,32 @@ const LANGS = { en: 'English', ar: 'Arabic', bn: 'Bengali' }
 .customers li:last-child { border-bottom: 0; padding-bottom: 0; }
 .links { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 2px 0; }
 .links a { color: inherit; overflow-wrap: anywhere; }
+.name { overflow-wrap: anywhere; }
+.pill { text-transform: none; }
+.drawer-head h3 { overflow-wrap: anywhere; }
+
+/* Phones: each product is a card instead of a table row. */
+@media (max-width: 700px) {
+  .scroll > .stock { display: block; min-width: 0; }
+  .stock thead { display: none; }
+  .stock tbody { display: block; }
+  .stock tr.click {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px;
+    grid-template-areas: 'product product product' 'waiting first stock' 'actions actions actions';
+    padding: 16px; border-bottom: 1px solid var(--line); align-items: end;
+  }
+  .stock tr.click:last-child { border-bottom: 0; }
+  .stock tr.back { background: #f3faf6; }
+  .stock td { display: block; padding: 0; border: 0; background: none !important; white-space: normal; width: auto !important; text-align: left; }
+  .s-product { grid-area: product; }
+  .waiting { grid-area: waiting; }
+  .s-first { grid-area: first; font-size: 13px; }
+  .s-stock { grid-area: stock; }
+  .s-actions { grid-area: actions; }
+  .s-actions .btn { width: 100%; }
+  .waiting::before, .s-first::before { content: attr(data-label); display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-bottom: 3px; }
+  .stock .empty { padding: 32px 16px; }
+  .links { gap: 0 16px; }
+  .links a { padding: 6px 0; }
+}
 </style>

@@ -83,7 +83,8 @@ code { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-si
 .menu-btn:hover { background: var(--hover); }
 .mobilebar, .sidebar-backdrop { display: none; }
 
-main { min-width: 0; padding: 36px 32px 56px; }
+/* overflow-x: clip is a safety net: one too-wide element must never make the whole page pan sideways. */
+main { min-width: 0; padding: 36px 32px 56px; overflow-x: clip; }
 .page { max-width: 1216px; margin: 0 auto; }
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; min-height: 42px; }
 .page-head h1 { font-size: 30px; letter-spacing: -.75px; }
@@ -118,7 +119,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); box-shad
 select { padding-right: 30px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23868b97' stroke-width='1.6'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 input[type='checkbox'] { width: 16px; height: 16px; accent-color: var(--accent); padding: 0; }
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--text-2); }
-.field input, .field select, .field textarea { width: 100%; }
+/* Labels are medium weight; what's typed into them isn't. */
+.field input, .field select, .field textarea { width: 100%; font-weight: 400; }
 .field .hint { font-weight: 400; color: var(--muted); font-size: 12.5px; }
 .check { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; color: var(--text); cursor: pointer; }
 .search { position: relative; display: flex; align-items: center; }
@@ -146,6 +148,23 @@ input[type='checkbox'] { width: 16px; height: 16px; accent-color: var(--accent);
 .seg { display: inline-flex; background: #f1f5f9; border: 1px solid #f1f5f9; border-radius: 999px; padding: 3px; gap: 2px; }
 .seg button { font: inherit; font-size: 13px; font-weight: 500; border: 1px solid transparent; background: none; color: var(--muted); padding: 7px 14px; border-radius: 999px; cursor: pointer; }
 .seg button.on { background: var(--panel); border-color: var(--line); color: var(--text); }
+.seg button { white-space: nowrap; flex-shrink: 0; }
+
+/* Filter pills (status tabs on Orders, Support, Notify me). On phones they scroll sideways in one line. */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.tabs button {
+  font: inherit; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: var(--panel); color: var(--text-2);
+  padding: 8px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.tabs button .num { color: var(--muted); margin-left: 4px; font-size: 11px; }
+.tabs button:hover { border-color: var(--ink); }
+.tabs button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.tabs button.on .num { color: #d1d5db; }
+
+/* A row of pills that scrolls sideways instead of wrapping (no visible scrollbar). */
+.scroll-x { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; max-width: 100%; }
+.scroll-x::-webkit-scrollbar { display: none; }
+.cap { text-transform: capitalize; }
 
 /* ---------- Tables ---------- */
 .scroll { min-width: 0; overflow-x: auto; }
@@ -189,8 +208,21 @@ tr.sel td { background: #eff6ff; }
 .kv dd { margin: 0; }
 .lines td { padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
 .lines tr.total td { border-bottom: 0; padding-top: 12px; font-weight: 600; }
+.lines td.r { padding-left: 12px; white-space: nowrap; }
 .timeline { display: grid; gap: 10px; }
 .timeline div { display: flex; gap: 10px; align-items: baseline; font-size: 13px; }
+.kv a { color: inherit; overflow-wrap: anywhere; }
+
+/* Status history in drawers (Orders, Support). */
+.history { list-style: none; margin: 0; padding: 0; }
+.history li { position: relative; padding: 0 0 22px 26px; font-size: 13px; }
+.history li:last-child { padding-bottom: 0; }
+.history .dot { position: absolute; left: 0; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px var(--panel); }
+.history li:not(:last-child)::after { content: ''; position: absolute; left: 5px; top: 20px; bottom: 9px; width: 2px; background: var(--line); }
+.history .h-status { font-weight: 500; margin-bottom: 2px; }
+
+/* Don't let the page scroll behind an open drawer or menu. */
+body:has(.backdrop, .sidebar.open) { overflow: hidden; }
 
 .slide-in-enter-active, .slide-in-leave-active { transition: transform .18s ease; }
 .slide-in-enter-from, .slide-in-leave-to { transform: translateX(100%); }
@@ -226,24 +258,40 @@ tr.sel td { background: #eff6ff; }
   .split { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 }
 
+/* Touch screens (phones and tablets): 44px tap targets, and 16px inputs so iOS doesn't zoom in on focus. */
+@media (max-width: 700px), (pointer: coarse) {
+  .nav-item, .signout { min-height: 44px; }
+  input:not([type='checkbox']), select, textarea { font-size: 16px; min-height: 44px; }
+  .btn, .seg button, .tabs button, .check { min-height: 44px; }
+  .btn.icon { width: 44px; height: 44px; }
+  .btn.sm { padding-inline: 14px; }
+}
+
 @media (max-width: 700px) {
   .brand { gap: 8px; }
   .brand img { width: 110px; height: 32px; }
   .brand > span { padding-left: 8px; font-size: 11px; }
-  .nav-item, .signout { min-height: 44px; }
   main { padding: 24px 16px max(40px, env(safe-area-inset-bottom)); }
-  .page-head { margin-bottom: 20px; }
+  .page-head { margin-bottom: 20px; min-height: 0; }
   .page-head h1 { font-size: 24px; }
+  /* Several page actions share one full-width row. */
+  .page-head > .row:has(> .btn:not(.icon)) { width: 100%; }
+  .page-head > .row > .btn:not(.icon) { flex: 1 1 auto; }
   .card-head, .card-body, .card-foot { padding: 16px; }
-  input:not([type='checkbox']), select, textarea { font-size: 16px; min-height: 44px; }
-  .btn, .seg button, .check { min-height: 44px; }
-  .btn.icon { width: 44px; height: 44px; }
   .scroll th, .scroll td { padding-inline: 10px; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button { font-size: 12px; padding-inline: 10px; }
+  .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .seg::-webkit-scrollbar { display: none; }
+  /* Pagination footers: count on its own line, then "Page x of y  Previous  Next". */
+  .card-foot > .row:has(> span:first-child) { width: 100%; flex-wrap: nowrap; }
+  .card-foot > .row > span:first-child { margin-right: auto; }
+  .kv a { display: inline-block; padding: 6px 0; }
   .drawer-head, .drawer-body, .drawer-foot { padding: 12px; }
   .drawer-head .btn { flex-shrink: 0; }
   .drawer-head h3, .kv dd, .lines td:first-child { overflow-wrap: anywhere; }
   .kv { grid-template-columns: 82px minmax(0, 1fr); }
-  .lines td.r { padding-left: 8px; white-space: nowrap; }
   .drawer-foot { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
   .toast { bottom: max(20px, env(safe-area-inset-bottom)); max-width: calc(100vw - 32px); }
 }

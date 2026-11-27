@@ -281,10 +281,10 @@ onMounted(load)
 .pthumb { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; border: 1px solid var(--line-soft); background: #fff; flex-shrink: 0; }
 .info { flex: 1; min-width: 0; }
 .name { font-weight: 500; overflow-wrap: anywhere; }
-.was { text-decoration: line-through; }
+.was { text-decoration: line-through; margin-left: 4px; }
 .warn { color: var(--warn); }
 .actions { display: flex; gap: 6px; flex-shrink: 0; }
-.bulk { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 10px; border-radius: 10px; background: var(--hover); }
+.bulk { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; padding: 6px 10px; border-radius: 10px; background: var(--hover); }
 .check-all { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; cursor: pointer; }
 .item.pickable { cursor: pointer; user-select: none; }
 .item.picked { border-color: var(--accent); }
@@ -295,6 +295,8 @@ onMounted(load)
 }
 @media (max-width: 560px) {
   .item { flex-wrap: wrap; }
-  .actions { width: 100%; justify-content: flex-end; }
+  .item .actions { width: 100%; justify-content: flex-end; }
+  .bulk .actions { margin-left: auto; }
+  .item.pickable { flex-wrap: nowrap; }
 }
 </style>

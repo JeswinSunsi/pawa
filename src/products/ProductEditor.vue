@@ -531,5 +531,11 @@ textarea { width: 100%; resize: vertical; }
   .spec-row { grid-template-columns: 1fr auto; }
   .spec-row input:first-child { grid-column: 1 / -1; }
   .btn.icon.sm { width: 44px; height: 44px; }
+  /* Footer: Save and Cancel share the first line, the rarer actions the second. */
+  .drawer-foot .btn { flex: 1 1 auto; }
+  .drawer-foot .spacer { flex-basis: 100%; height: 0; }
+  .mini { flex-wrap: wrap; }
+  .mini .info { flex-basis: calc(100% - 46px); }
+  .mini > .btn.sm:not(.icon) { margin-left: 46px; }
 }
 </style>

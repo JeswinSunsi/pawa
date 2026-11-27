@@ -640,11 +640,14 @@ function problemText(p) {
 
 .filters { gap: 10px; justify-content: flex-start; }
 .grow { flex: 1 1 240px; }
-.chips { flex-wrap: wrap; }
+/* One line of filters that scrolls sideways; a wrapped pill-shaped bar looks broken. */
+.chips { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
 .chips button.bad:not(.on) { color: var(--danger); }
+.chips .num { margin-left: 4px; }
 
 .plist { list-style: none; margin: 0; padding: 0; display: grid; }
-.prow { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-bottom: 1px solid var(--line-soft); cursor: pointer; border-radius: 8px; min-width: 0; }
+.prow { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-bottom: 1px solid var(--line-soft); cursor: pointer; border-radius: 8px; min-width: 0; }
 .prow:hover, .prow:focus-visible { background: #f9fafb; outline: none; }
 .prow:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
 .prow.static { cursor: default; }
@@ -676,10 +679,16 @@ function problemText(p) {
 .toast-btn { font: inherit; font-weight: 600; color: #93c5fd; background: none; border: 0; cursor: pointer; padding: 4px 0; }
 
 @media (max-width: 700px) {
-  .prow { flex-wrap: wrap; }
+  .prow { flex-wrap: wrap; row-gap: 8px; }
   .pmain { flex-basis: calc(100% - 60px); }
-  .pside { margin-left: 60px; flex-direction: row; display: flex; gap: 8px; align-items: center; }
+  .pside { flex: 1 1 calc(100% - 60px); min-width: 0; margin-left: 60px; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; justify-items: start; }
+  /* The problem badge sits on the thumbnail's corner instead of taking a line of its own. */
+  .problem { position: absolute; top: 4px; left: 44px; box-shadow: 0 0 0 2px var(--panel); }
   .row-actions:empty { display: none; }
+  .row-actions { margin-left: 60px; }
   .filters select { flex: 1 1 140px; }
+  .filters .grow { flex-basis: 100%; }
+  .chips { width: 100%; }
+  .summary { align-items: flex-start; }
 }
 </style>
