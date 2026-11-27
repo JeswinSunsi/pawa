@@ -6,6 +6,7 @@ import OrdersView from './views/OrdersView.vue'
 import SupportView from './views/SupportView.vue'
 import StockRequestsView from './views/StockRequestsView.vue'
 import PromosView from './views/PromosView.vue'
+import FlashSaleView from './views/FlashSaleView.vue'
 import BannersView from './views/BannersView.vue'
 import GameAdsView from './views/GameAdsView.vue'
 import ProductListView from './views/ProductListView.vue'
@@ -20,6 +21,7 @@ const tabs = {
   support: { label: 'Support', view: SupportView, icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
   stockRequests: { label: 'Notify me', view: StockRequestsView, icon: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0' },
   promos: { label: 'Promo codes', view: PromosView, icon: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01' },
+  flashSale: { label: 'Flash sale', view: FlashSaleView, icon: 'M13 2 3 14h9l-1 8 10-12h-9z' },
   productsFile: { label: 'Inventory', view: ProductsFileView, icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6' },
   sales: {
     label: 'Sales page', view: ProductListView, icon: 'M19 5 5 19M6.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM17.5 20a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
