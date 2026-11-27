@@ -8,7 +8,6 @@ import { api, omr, previewUrl } from '../api'
 
 const MAX_ITEMS = 40
 const OMAN_OFFSET_MS = 4 * 3600 * 1000
-const QUICK_OFF = [10, 20, 30]
 
 const catalogue = ref([])
 const saved = ref(null)        // the sale as stored (with claimed counts), or null
@@ -323,12 +322,6 @@ onMounted(load)
                 <label class="field">Deal price (OMR)
                   <input v-model="item.sale_price" type="number" min="0.001" step="0.001" inputmode="decimal" />
                 </label>
-                <div class="field">
-                  <span>Quick <span v-if="itemInfo(item).off !== null" class="off num">−{{ itemInfo(item).off }}%</span></span>
-                  <div class="row quick">
-                    <button v-for="pc in QUICK_OFF" :key="pc" type="button" class="btn sm" :disabled="!itemInfo(item).p" @click="applyOff(item, pc)">−{{ pc }}%</button>
-                  </div>
-                </div>
                 <label class="field">Deal stock
                   <input v-model="item.deal_stock" type="number" min="1" step="1" placeholder="No limit" />
                 </label>
@@ -377,9 +370,7 @@ onMounted(load)
 .deal { display: grid; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
 .deal.bad { border-color: #f3caca; }
 .deal-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.deal-fields { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: end; }
-.quick { gap: 4px; flex-wrap: nowrap; }
-.off { margin-left: 4px; color: var(--danger); font-weight: 600; }
+.deal-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: end; }
 .bulk-off { gap: 6px; flex-wrap: nowrap; }
 .bulk-off input { width: 64px; padding: 5px 8px; border-radius: 8px; }
 .sold { display: flex; align-items: center; gap: 10px; }
@@ -391,8 +382,6 @@ onMounted(load)
 }
 @media (max-width: 560px) {
   .grid2 { grid-template-columns: minmax(0, 1fr); }
-  .deal-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .deal-fields > .field:nth-child(2) { grid-column: 1 / -1; order: 3; }
   .deal-top { flex-wrap: wrap; }
   .deal-top .actions { margin-left: auto; }
 }
