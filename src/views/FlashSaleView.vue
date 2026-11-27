@@ -8,7 +8,6 @@ import { api, omr, previewUrl } from '../api'
 
 const MAX_ITEMS = 40
 const OMAN_OFFSET_MS = 4 * 3600 * 1000
-const DURATIONS = [3, 6, 12, 24, 48]
 const QUICK_OFF = [10, 20, 30]
 
 const catalogue = ref([])
@@ -54,7 +53,7 @@ function formFrom(sale) {
   }
 }
 
-// --- A clock for the status and the timeline ---
+// --- A clock for the status line ---
 const now = ref(Date.now())
 let clock
 onMounted(() => { clock = setInterval(() => { now.value = Date.now() }, 1000) })
@@ -95,30 +94,6 @@ const scheduleProblem = computed(() => {
   if (duration.value > 14 * 86400000) return 'A flash sale can last at most 14 days.'
   return ''
 })
-
-// Timeline: the sale's window on a track that also fits "now", with a needle at now.
-const timeline = computed(() => {
-  const s = startMs.value, e = endMs.value
-  if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return null
-  const lo = Math.min(s, now.value), hi = Math.max(e, now.value)
-  const pad = (hi - lo) * 0.06 || 3600000
-  const from = lo - pad, width = hi + pad - from
-  const pct = (ms) => `${((ms - from) / width) * 100}%`
-  return { left: pct(s), right: `${100 - ((e - from) / width) * 100}%`, now: pct(now.value) }
-})
-
-function startNow() {
-  const length = Number.isFinite(duration.value) && duration.value > 0 ? duration.value : 24 * 3600000
-  form.value.starts = toOmanInput(new Date(now.value + 60000).toISOString())
-  form.value.ends = toOmanInput(new Date(Date.parse(fromOmanInput(form.value.starts)) + length).toISOString())
-  msg.value = ''
-}
-function setDuration(hours) {
-  if (!Number.isFinite(startMs.value)) return
-  form.value.ends = toOmanInput(new Date(startMs.value + hours * 3600000).toISOString())
-  msg.value = ''
-}
-const activeDuration = computed(() => DURATIONS.find((h) => duration.value === h * 3600000) || null)
 
 // --- Deals ---
 const byId = computed(() => Object.fromEntries(catalogue.value.map((p) => [p.id, p])))
@@ -270,26 +245,11 @@ onMounted(load)
         </div>
         <div class="grid2">
           <label class="field">Starts
-            <span class="with-btn">
-              <input v-model="form.starts" type="datetime-local" />
-              <button type="button" class="btn sm" @click="startNow">Start now</button>
-            </span>
+            <input v-model="form.starts" type="datetime-local" />
           </label>
           <label class="field">Ends
             <input v-model="form.ends" type="datetime-local" :min="form.starts" />
           </label>
-        </div>
-        <div class="row">
-          <span class="muted small">Length</span>
-          <div class="seg">
-            <button v-for="h in DURATIONS" :key="h" type="button" :class="{ on: activeDuration === h }" @click="setDuration(h)">{{ h }}h</button>
-          </div>
-          <span v-if="!scheduleProblem" class="muted small num">Runs {{ span(duration) }}: {{ omanTime(startMs) }} → {{ omanTime(endMs) }}</span>
-        </div>
-
-        <div v-if="timeline" class="timeline-track" aria-hidden="true">
-          <span class="tl-window" :style="{ left: timeline.left, right: timeline.right }"></span>
-          <span class="tl-now" :style="{ left: timeline.now }"><b>now</b></span>
         </div>
         <p v-if="scheduleProblem" class="error" style="margin: 0">{{ scheduleProblem }}</p>
 
@@ -402,14 +362,6 @@ onMounted(load)
 <style scoped>
 .head-status { display: flex; align-items: center; gap: 10px; }
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.with-btn { display: flex; gap: 8px; }
-.with-btn input { flex: 1; }
-
-.timeline-track { position: relative; height: 26px; margin: 4px 0 2px; }
-.timeline-track::before { content: ''; position: absolute; left: 0; right: 0; top: 11px; height: 4px; border-radius: 2px; background: var(--line-soft); }
-.tl-window { position: absolute; top: 9px; height: 8px; border-radius: 4px; background: #fbd5d5; border: 1px solid #f19c9c; }
-.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); }
-.tl-now b { position: absolute; top: -2px; left: 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--ink); white-space: nowrap; }
 
 .lists { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; align-items: start; }
 .lists .card { margin: 0; }
