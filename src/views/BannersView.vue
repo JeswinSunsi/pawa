@@ -18,12 +18,7 @@ const SLOTS = [
 // Catalogue categories the slots above already cover (the `categories` of each group in
 // porodo's homeCategories.js), lowercased. Every other catalogue category gets its own slot below.
 const GROUPED = new Set([
-  'smartphone', 'smartphones', 'phone', 'phones', 'tablet', 'tablets', 'power bank', 'power banks',
-  'smartwatch', 'smartwatches', 'smart watch', 'smart watches', 'wearable', 'wearables',
-  'smart band', 'smart bands', 'fitness', 'watch straps', 'glasses', 'sunglasses',
-  'speaker', 'speakers', 'bluetooth speakers', 'audio', 'earbuds', 'earphones', 'headphones',
-  'gaming', 'gaming accessory', 'gaming accessories',
-  'charger', 'chargers', 'wireless charger', 'wireless chargers', 'adapters & wall chargers', 'adapters', 'data cables',
+  'smartphones', 'tablets', 'power banks', 'wearables', 'speakers', 'audio', 'gaming', 'chargers',
 ])
 const slugify = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
